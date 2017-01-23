@@ -65,7 +65,7 @@ fun eof() = let
 
 
 
-<INITIAL> while    => (Tokens.VAR(yypos,yypos+size yytext));
+<INITIAL> while    => (Tokens.WHILE(yypos,yypos+size yytext));
 <INITIAL> for      => (Tokens.FOR(yypos,yypos+size yytext));
 <INITIAL> to       => (Tokens.TO(yypos,yypos+size yytext));
 <INITIAL> break    => (Tokens.BREAK(yypos,yypos+size yytext));

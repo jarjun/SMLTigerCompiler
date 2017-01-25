@@ -31,8 +31,9 @@ fun eof() = let
 %% 
 %s COMMENT STRING;
 %%
-\n | \r  => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
-" " | \t => (continue());
+
+<INITIAL> " " | \t => (continue());
+
 
 
 <INITIAL> "/*" => (YYBEGIN COMMENT; 
@@ -59,10 +60,17 @@ fun eof() = let
 
 <STRING> \" => (YYBEGIN INITIAL;
 				stringOpen := ~1;
-				Tokens.STRING(!stringInProgress, yypos, yypos + size(!stringInProgress)));
+				(* print("LENGTH " ^ Int.toString(size(!stringInProgress)) ^ "\n"); *)
+				Tokens.STRING(!stringInProgress, yypos - size(!stringInProgress) - 1, yypos+1));
+
+<STRING> \\\" => (stringInProgress := !stringInProgress ^ "\""; continue());
+<STRING> \\\\ => (stringInProgress := !stringInProgress ^ "\\"; continue());
 
 <STRING> \\\" | . => (stringInProgress := !stringInProgress ^ yytext; continue());
+<STRING> \n | \r  => (stringInProgress := !stringInProgress ^ yytext; lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
 
+
+\n | \r  => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
 
 
 <INITIAL> while    => (Tokens.WHILE(yypos,yypos+size yytext));

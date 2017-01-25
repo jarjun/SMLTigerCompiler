@@ -1,7 +1,10 @@
 var weirdString = "\""
-var another = "\t"
+var another = "ab
+cd"
+var oneBackSlash = "\\"
 /*
 var huh = """
 /*
 alkjsd
 */
+

@@ -1,7 +1,21 @@
+var formattedMultiLineString = "abc\   			
+
+	\t\
+ 
+
+
+\de\
+\fg\
+\hijk"
+
+var ctrlSeq = "\^J"
+var AfromDigits = "\010"
 var weirdString = "\""
-var another = "ab
-cd"
+var another = "ab\nc\td"
+var eu = "€"
+var slashN = "\\n"
 var oneBackSlash = "\\"
+var negNum = -5
 /*
 var huh = """
 /*

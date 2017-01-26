@@ -80,7 +80,7 @@ fun eof() = let
 <STRING> \\\^[@-_] => (stringInProgress := !stringInProgress ^
 						String.str(chr(ord(String.sub(yytext,2))-64)); continue());
 
-
+<STRING> \\[ \t\n\r\f]+\\ => (continue());
 
 <STRING> \\ => (ErrorMsg.error yypos (" invalid escape sequence"); continue());
 

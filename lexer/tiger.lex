@@ -84,8 +84,12 @@ fun eof() = let
 
 <STRING> \\ => (ErrorMsg.error yypos (" invalid escape sequence"); continue());
 
-<STRING> . => (stringInProgress := !stringInProgress ^ yytext; continue());
-<STRING> \n|\r  => (stringInProgress := !stringInProgress ^ yytext; lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
+<STRING> [ -~] => (stringInProgress := !stringInProgress ^ yytext; continue());
+
+<STRING> . => (ErrorMsg.error yypos (" non printable character"); continue());
+
+<STRING> \n|\r  => (stringInProgress := !stringInProgress ^ yytext; lineNum := !lineNum+1; linePos := yypos :: !linePos; 
+					ErrorMsg.error yypos (" cannot have newline in string"); continue());
 
 
 \n|\r  => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());

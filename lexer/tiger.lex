@@ -32,7 +32,7 @@ fun eof() = let
 %s COMMENT STRING;
 %%
 
-<INITIAL> " " | \t => (continue());
+<INITIAL> " "|\t => (continue());
 
 
 
@@ -59,18 +59,36 @@ fun eof() = let
 				continue());
 
 <STRING> \" => (YYBEGIN INITIAL;
-				stringOpen := ~1;
 				(* print("LENGTH " ^ Int.toString(size(!stringInProgress)) ^ "\n"); *)
-				Tokens.STRING(!stringInProgress, yypos - size(!stringInProgress) - 1, yypos+1));
+				let val tempStringOpen = !stringOpen 
+				in
+					stringOpen := ~1;
+					print("LENGTH " ^ Int.toString(size(!stringInProgress)) ^ "\n");
+					Tokens.STRING(!stringInProgress, tempStringOpen, yypos+1)
+				end);
 
-<STRING> \\\" => (stringInProgress := !stringInProgress ^ "\""; continue());
+
 <STRING> \\\\ => (stringInProgress := !stringInProgress ^ "\\"; continue());
+<STRING> \\\" => (stringInProgress := !stringInProgress ^ "\""; continue());
+<STRING> \\n  => (stringInProgress := !stringInProgress ^ "\n"; continue());
+<STRING> \\t  => (stringInProgress := !stringInProgress ^ "\t"; continue());
 
-<STRING> \\\" | . => (stringInProgress := !stringInProgress ^ yytext; continue());
-<STRING> \n | \r  => (stringInProgress := !stringInProgress ^ yytext; lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
+<STRING> \\[0-1][0-9][0-9]|\\2[0-4][0-9]|\\25[0-5]=> (stringInProgress := !stringInProgress ^ 
+								String.str(chr(valOf(Int.fromString(String.substring(yytext,1,3))))); continue());
 
 
-\n | \r  => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
+<STRING> \\\^[@-_] => (stringInProgress := !stringInProgress ^
+						String.str(chr(ord(String.sub(yytext,2))-64)); continue());
+
+
+
+<STRING> \\ => (ErrorMsg.error yypos (" invalid escape sequence"); continue());
+
+<STRING> . => (stringInProgress := !stringInProgress ^ yytext; continue());
+<STRING> \n|\r  => (stringInProgress := !stringInProgress ^ yytext; lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
+
+
+\n|\r  => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
 
 
 <INITIAL> while    => (Tokens.WHILE(yypos,yypos+size yytext));

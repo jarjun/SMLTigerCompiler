@@ -29,7 +29,7 @@ fun eof() = let
 
 
 %% 
-%s COMMENT STRING;
+%s COMMENT STRING FORMATTING;
 %%
 
 <INITIAL> " "|\t => (continue());
@@ -78,13 +78,28 @@ fun eof() = let
 <STRING> \\\^[@-_] => (stringInProgress := !stringInProgress ^
 						String.str(chr(ord(String.sub(yytext,2))-64)); continue());
 
-<STRING> \\[ \t\n\r\f]+\\ => (continue());
+
+
+<STRING> \\[ \t\n\r\f] => (YYBEGIN FORMATTING;
+							if(String.substring(yytext,1,1) = "\n" orelse 
+							   String.substring(yytext,1,1) = "\r")
+
+								then (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue())
+								else continue()
+
+
+						   );
+
+<FORMATTING> [\n\r] => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
+<FORMATTING> [ \t\f] => (continue());
+<FORMATTING> \\ => (YYBEGIN STRING; continue());
+<FORMATTING> . => (ErrorMsg.error yypos (" invalid character " ^ yytext ^ " in formatting block"); continue());
 
 <STRING> \\ => (ErrorMsg.error yypos (" invalid escape sequence"); continue());
 
 <STRING> [ -~] => (stringInProgress := !stringInProgress ^ yytext; continue());
 
-<STRING> . => (ErrorMsg.error yypos (" non printable character"); continue());
+<STRING> . => (ErrorMsg.error yypos (" non printable character in string"); continue());
 
 <STRING> \n|\r  => (stringInProgress := !stringInProgress ^ yytext; lineNum := !lineNum+1; linePos := yypos :: !linePos; 
 					ErrorMsg.error yypos (" cannot have newline in string"); continue());

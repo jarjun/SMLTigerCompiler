@@ -59,11 +59,9 @@ fun eof() = let
 				continue());
 
 <STRING> \" => (YYBEGIN INITIAL;
-				(* print("LENGTH " ^ Int.toString(size(!stringInProgress)) ^ "\n"); *)
 				let val tempStringOpen = !stringOpen 
 				in
 					stringOpen := ~1;
-					print("LENGTH " ^ Int.toString(size(!stringInProgress)) ^ "\n");
 					Tokens.STRING(!stringInProgress, tempStringOpen, yypos+1)
 				end);
 

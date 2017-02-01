@@ -18,9 +18,9 @@ var oneBackSlash = "\\"
 var newline = "this
 then this"
 var negNum = -5
+
+var asd = "abc" "def"
 /*
-var huh = """
-/*
-alkjsd
+alkjsd€
 */
 

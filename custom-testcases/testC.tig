@@ -1,0 +1,7 @@
+99while
+/* line
+newline
+this newer line \n */
+var string = "this is a string
+and an error"
+var _id

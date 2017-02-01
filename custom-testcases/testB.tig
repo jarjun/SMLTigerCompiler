@@ -1,4 +1,5 @@
-var formattedMultiLineString = "abc\   			
+var formattedMultiLineString = "abc\
+
 
 	\t\
  
@@ -6,7 +7,7 @@ var formattedMultiLineString = "abc\
 
 \de\
 \fg\
-\hijk"
+\hijk€"
 
 var ctrlSeq = "\^J"
 var AfromDigits = "\010"
@@ -18,9 +19,14 @@ var oneBackSlash = "\\"
 var newline = "this
 then this"
 var negNum = -5
+
+var asd = "abc" "def"
+var a = "abc\
+	
+\def"
+
+var line28gg = "	"
 /*
-var huh = """
-/*
-alkjsd
+alkjsd€
 */
 

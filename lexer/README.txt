@@ -1,3 +1,7 @@
+Chris Bernt (ctb25)
+Arjun Jain  (aj169)
+Wesley Valentine (wsv)
+
 How we handled comments:
 
 We handled comments using a comment state that started when the lexer saw a '/*' expression. 
@@ -13,7 +17,7 @@ We threw errors on illegal escape sequences and nonprintable characters includin
 We allowed the different control sequences and ascii values if they were formatted correctly. 
 For the the formatting we made a new formatting state that was entered when there was a '\' followed by a valid formatting character.
 In this formatting state we kept track of linenum correctly and closed it when there was another '\' seen and went back to string.
-If there was a stringOpen (it was not equal to ~1) then we returned an error upon seeing EOF.
+Upon seeing EOF, if there was a string open (stringOpen variable not equal to ~1) then we returned an error.
 
 
 Error Handling:

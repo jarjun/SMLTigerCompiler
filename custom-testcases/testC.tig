@@ -5,3 +5,5 @@ this newer line \n */
 var string = "this is a string
 and € an error"
 var _id
+/* /* */ */
+var comString = " /* abc */ "

@@ -9,6 +9,11 @@ var formattedMultiLineString = "abc\
 \fg\
 \hijk€"
 
+/*
+asd
+
+*/
+
 var ctrlSeq = "\^J"
 var AfromDigits = "\010"
 var weirdString = "\""
@@ -25,7 +30,10 @@ var a = "abc\
 	
 \def"
 
-var line28gg = "	"
+var line33gg = "	"
+var euro€ID = 3
+var abc;def = 3;
+var qw#er = "#";
 /*
 alkjsd€
 */

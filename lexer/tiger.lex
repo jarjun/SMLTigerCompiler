@@ -24,6 +24,12 @@ fun eof() = let
 			in 
 				checkUnclosedStringAtEOF();
 				checkUnclosedCommentAtEOF();
+
+				stringInProgress := "";
+				stringOpen := ~1;
+				commentOpen := ~1;
+				commentDepth := 0;
+
 				Tokens.EOF(pos,pos) 
 			end
 

@@ -2,6 +2,9 @@ var a := 3
 var b:int := 5
 
 type c = tree
-type d = array of penis
-type arjun = {bagof:dicks}
-type chris = {dick:ofbags, bag:dicksof, very:long, test:bagofdicks}
+type d = array of trees
+type arjun = {b:stuff}
+type chris = {a:z, b:f}
+
+function treeLeaves (x:int) = 10
+function treeBeaves (x:int, y:int, z:int) = 10

@@ -11,7 +11,7 @@
   | BREAK | NIL
   | FUNCTION | VAR | TYPE 
 
-%nonterm  exp | program | varDec | stmlist | stm | funDec | tyDec | dec | ty | tyfields | typeid
+%nonterm  exp | program | varDec | explist | funDec | tyDec | dec | ty | tyfields | typeid
 
 %pos int
 %verbose
@@ -32,14 +32,14 @@
 
 %%
 
-program	: stmlist                      ()
+program	: explist                      ()
 
-stmlist: stm                           ()
-      |  stmlist stm                   ()
+explist: exp                           ()
+       | explist exp                   ()
 	
-stm:  dec                              ()
-
-exp:  INT                              ()
+exp:  dec                              ()
+   | INT                               ()
+   | STRING ()
    | IF ID THEN exp ()
    | IF ID THEN exp ELSE exp ()
 
@@ -48,7 +48,7 @@ dec:  varDec                           ()
    |  tyDec                            ()
 
 varDec:  VAR ID ASSIGN exp                 ()
-   |  VAR ID COLON typeid ASSIGN exp       ()
+      |  VAR ID COLON typeid ASSIGN exp    ()
 
 tyDec: TYPE typeid EQ  ty                  ()
 
@@ -61,4 +61,7 @@ tyfields:                                ()
         | ID COLON typeid COMMA tyfields ()
 
 typeid : ID ()
+
+funDec: FUNCTION ID LPAREN tyfields RPAREN EQ exp ()
+      | FUNCTION ID LPAREN tyfields RPAREN COLON typeid EQ exp ()
    

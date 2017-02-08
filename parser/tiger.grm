@@ -11,7 +11,7 @@
   | BREAK | NIL
   | FUNCTION | VAR | TYPE 
 
-%nonterm  exp | program
+%nonterm  exp | program | varDec | stmlist | stm | funDec | tyDec | dec | ty | tyfields | typeid
 
 %pos int
 %verbose
@@ -21,7 +21,7 @@
 
 %name Tiger
 
-%keyword WHILE FOR TO BREAK LET IN END FUNCTION VAR TYPE ARRAY IF THEN ELSE 
+%keyword WHILE FOR TO BREAK LET IN END FUNCTION VAR TYPE ARRAY IF THEN ELSE
 	DO OF NIL
 
 %prefer THEN ELSE LPAREN
@@ -32,7 +32,33 @@
 
 %%
 
-program	: exp				()
+program	: stmlist                      ()
 
+stmlist: stm                           ()
+      |  stmlist stm                   ()
 	
-exp: 			()
+stm:  dec                              ()
+
+exp:  INT                              ()
+   | IF ID THEN exp ()
+   | IF ID THEN exp ELSE exp ()
+
+dec:  varDec                           ()
+   |  funDec                           ()
+   |  tyDec                            ()
+
+varDec:  VAR ID ASSIGN exp                 ()
+   |  VAR ID COLON typeid ASSIGN exp       ()
+
+tyDec: TYPE typeid EQ  ty                  ()
+
+ty: typeid                                 ()
+  | LBRACE tyfields RBRACE                 ()
+  | ARRAY OF typeid                        ()
+
+tyfields:                                ()
+        | ID COLON typeid                ()
+        | ID COLON typeid COMMA tyfields ()
+
+typeid : ID ()
+   

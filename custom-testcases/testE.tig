@@ -1,0 +1,7 @@
+var a := 3
+var b:int := 5
+
+type c = tree
+type d = array of penis
+type arjun = {bagof:dicks}
+type chris = {dick:ofbags, bag:dicksof, very:long, test:bagofdicks}

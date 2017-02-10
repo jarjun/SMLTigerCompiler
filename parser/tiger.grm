@@ -11,7 +11,18 @@
   | BREAK | NIL
   | FUNCTION | VAR | TYPE 
 
-%nonterm  exp | program | varDec | explist | funDec | tyDec | dec | ty | tyfields | typeid
+%nonterm  exp | program | varDec | explist | funDec | tyDec | dec | ty | tyfields | typeid | logExp
+
+%nonassoc ASSIGN
+%right THEN
+%right ELSE
+
+%left OR 
+%left AND
+%nonassoc LE GE EQ NEQ GT LT
+%left PLUS MINUS
+%left TIMES DIVIDE
+
 
 %pos int
 %verbose
@@ -32,20 +43,27 @@
 
 %%
 
-program	: explist                      ()
+program	: explist                          ()
 
-explist: exp                           ()
-       | explist exp                   ()
+explist: exp                               ()
+       | explist exp                       ()
 	
-exp:  dec                              ()
-   | INT                               ()
-   | STRING ()
-   | IF ID THEN exp ()
-   | IF ID THEN exp ELSE exp ()
+exp:  dec                                  ()
+   | STRING                                ()
+   | IF ID THEN exp                        ()
+   | IF ID THEN exp ELSE exp               ()
+   | logExp ()
+   | LPAREN exp RPAREN ()
 
-dec:  varDec                           ()
-   |  funDec                           ()
-   |  tyDec                            ()
+logExp: INT ()
+  | exp PLUS exp ()
+  | exp MINUS exp ()
+  | exp TIMES exp ()
+  | exp DIVIDE exp ()
+
+dec:  varDec                               ()
+   |  funDec                               ()
+   |  tyDec                                ()
 
 varDec:  VAR ID ASSIGN exp                 ()
       |  VAR ID COLON typeid ASSIGN exp    ()
@@ -56,11 +74,11 @@ ty: typeid                                 ()
   | LBRACE tyfields RBRACE                 ()
   | ARRAY OF typeid                        ()
 
-tyfields:                                ()
-        | ID COLON typeid                ()
-        | ID COLON typeid COMMA tyfields ()
+tyfields:                                  ()
+        | ID COLON typeid                  ()
+        | ID COLON typeid COMMA tyfields   ()
 
-typeid : ID ()
+typeid : ID                                ()
 
 funDec: FUNCTION ID LPAREN tyfields RPAREN EQ exp ()
       | FUNCTION ID LPAREN tyfields RPAREN COLON typeid EQ exp ()

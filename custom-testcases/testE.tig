@@ -1,4 +1,4 @@
-var a := 3
+var a := 3 + 3
 var b:int := 5
 
 type c = tree
@@ -8,3 +8,7 @@ type chris = {a:z, b:f}
 
 function treeLeaves (x:int) = 10
 function treeBeaves (x:int, y:int, z:int) = 10
+
+3 + 4 + 5
+var t := 3 * 10 / 2 
+(3 + (5)) * 7

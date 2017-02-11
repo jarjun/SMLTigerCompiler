@@ -12,3 +12,14 @@ function treeBeaves (x:int, y:int, z:int) = 10
 3 + 4 + 5
 var t := 3 * 10 / 2 
 (3 + (5)) * 7
+
+abc((), 4)
+xyz()
+one(5)
+var a := ()
+
+3 & 4
+1 & 2 | 4
+5134 <= 32940134 - 5
+var x := -4
+5 - (-4)

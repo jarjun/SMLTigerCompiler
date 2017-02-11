@@ -9,9 +9,9 @@
   | AND | OR | ASSIGN
   | ARRAY | IF | THEN | ELSE | WHILE | FOR | TO | DO | LET | IN | END | OF 
   | BREAK | NIL
-  | FUNCTION | VAR | TYPE 
+  | FUNCTION | VAR | TYPE | UMINUS
 
-%nonterm  exp | program | varDec | explist | funDec | tyDec | dec | ty | tyfields | typeid | logExp
+%nonterm  exp | program | varDec | explist | funDec | tyDec | dec | ty | tyfields | typeid | logExp | funCall | params
 
 %nonassoc ASSIGN
 %right THEN
@@ -22,6 +22,7 @@
 %nonassoc LE GE EQ NEQ GT LT
 %left PLUS MINUS
 %left TIMES DIVIDE
+%left UMINUS
 
 
 %pos int
@@ -52,14 +53,32 @@ exp:  dec                                  ()
    | STRING                                ()
    | IF ID THEN exp                        ()
    | IF ID THEN exp ELSE exp               ()
-   | logExp ()
-   | LPAREN exp RPAREN ()
+   | logExp                                ()
+   | LPAREN exp RPAREN                     ()
+   | LPAREN RPAREN                         ()
+   | funCall                               ()
+   
+funCall: ID LPAREN params RPAREN           ()
+       | ID LPAREN RPAREN                  ()  
 
-logExp: INT ()
-  | exp PLUS exp ()
-  | exp MINUS exp ()
-  | exp TIMES exp ()
-  | exp DIVIDE exp ()
+params: exp                                ()
+      | exp COMMA params                   ()
+
+logExp: INT                                ()
+  | exp PLUS exp                           ()
+  | exp MINUS exp                          ()
+  | exp TIMES exp                          ()
+  | exp DIVIDE exp                         ()
+  | exp EQ exp                             ()
+  | exp NEQ exp                            ()
+  | exp GT exp                             ()
+  | exp LT exp                             ()
+  | exp GE exp                             ()
+  | exp LE exp                             ()
+  | exp AND exp                            ()
+  | exp OR exp                             ()
+  | MINUS exp %prec UMINUS                 ()
+
 
 dec:  varDec                               ()
    |  funDec                               ()
@@ -72,10 +91,10 @@ tyDec: TYPE typeid EQ  ty                  ()
 
 ty: typeid                                 ()
   | LBRACE tyfields RBRACE                 ()
+  | LBRACE RBRACE                          ()
   | ARRAY OF typeid                        ()
 
-tyfields:                                  ()
-        | ID COLON typeid                  ()
+tyfields: ID COLON typeid                  ()
         | ID COLON typeid COMMA tyfields   ()
 
 typeid : ID                                ()

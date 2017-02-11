@@ -1,25 +1,30 @@
-var a := 3 + 3
-var b:int := 5
+let var a := 3 + 3
+    var b:int := 5
 
-type c = tree
-type d = array of trees
-type arjun = {b:stuff}
-type chris = {a:z, b:f}
+    type c = tree
+    type d = array of trees
+    type arjun = {b:stuff}
+    type chris = {a:z, b:f}
 
-function treeLeaves (x:int) = 10
-function treeBeaves (x:int, y:int, z:int) = 10
+    function treeLeaves (x:int) = 10
+    function treeBeaves (x:int, y:int, z:int) = 10
 
-3 + 4 + 5
-var t := 3 * 10 / 2 
-(3 + (5)) * 7
+    var t := 3 * 10 / 2 
+    var a := ()
+    var x := -4
 
-abc((), 4)
-xyz()
-one(5)
-var a := ()
+in
+3 + 4 + 5;
+(3 + (5)) * 7;
 
-3 & 4
-1 & 2 | 4
-5134 <= 32940134 - 5
-var x := -4
+(3; 4+5; xyz());
+
+abc((), 4);
+xyz();
+one(5);
+
+3 & 4;
+1 & 2 | 4;
+5134 <= 32940134 - 5;
 5 - (-4)
+end

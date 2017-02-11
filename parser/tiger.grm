@@ -11,7 +11,7 @@
   | BREAK | NIL
   | FUNCTION | VAR | TYPE | UMINUS
 
-%nonterm  exp | program | varDec | explist | funDec | tyDec | dec | ty | tyfields | typeid | logExp | funCall | params
+%nonterm  exp | expseq | program | varDec | funDec | tyDec | dec | decs | ty | tyfields | typeid | logExp | funCall | params | lvalue
 
 %nonassoc ASSIGN
 %right THEN
@@ -44,20 +44,24 @@
 
 %%
 
-program	: explist                          ()
-
-explist: exp                               ()
-       | explist exp                       ()
+program	: exp                              ()
 	
-exp:  dec                                  ()
+exp: LET decs IN expseq END                ()
+   | LET decs IN END                       ()
    | STRING                                ()
-   | IF ID THEN exp                        ()
-   | IF ID THEN exp ELSE exp               ()
+   | IF exp THEN exp                       ()
+   | IF exp THEN exp ELSE exp              ()
    | logExp                                ()
    | LPAREN exp RPAREN                     ()
    | LPAREN RPAREN                         ()
    | funCall                               ()
+   | LPAREN exp SEMICOLON expseq RPAREN    ()
+   | lvalue                                ()
+   | NIL                                   ()
    
+expseq: exp ()
+      | expseq SEMICOLON exp ()
+
 funCall: ID LPAREN params RPAREN           ()
        | ID LPAREN RPAREN                  ()  
 
@@ -79,6 +83,12 @@ logExp: INT                                ()
   | exp OR exp                             ()
   | MINUS exp %prec UMINUS                 ()
 
+lvalue: ID                                 ()
+      | lvalue DOT ID                      ()
+      | lvalue LBRACK exp RBRACK           ()
+
+decs: dec                                  ()
+    | decs dec                             ()
 
 dec:  varDec                               ()
    |  funDec                               ()

@@ -1,5 +1,7 @@
 parse:
 	sml sources.cm
+loop:
+	echo 'Parse.parse "../book-code/testcases/test$(num).tig";' | sml sources.cm
 
 test:
 	echo 'Parse.parse "../book-code/testcases/test$(firstword $(filter-out $@,$(MAKECMDGOALS))).tig";' | sml sources.cm

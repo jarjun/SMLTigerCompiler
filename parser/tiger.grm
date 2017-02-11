@@ -12,9 +12,10 @@
   | FUNCTION | VAR | TYPE | UMINUS
 
 %nonterm  exp | expseq | program | varDec | funDec | tyDec | dec | decs | ty | tyfields | typeid | logExp 
-              | funCall | params | lvalue | recordCreate | recordParams | arrayCreate
+              | funCall | params | lvalue | recordCreate | recordParams | arrayCreate | arrExtra
 
 %nonassoc ASSIGN
+%right DO
 %right OF
 %right THEN
 %right ELSE
@@ -46,7 +47,7 @@
 
 %%
 
-program	: exp                              ()
+program	: exp                          ()
 	
 exp: LET decs IN expseq END                ()
    | LET decs IN END                       ()
@@ -62,6 +63,10 @@ exp: LET decs IN expseq END                ()
    | NIL                                   ()
    | recordCreate                          ()
    | arrayCreate                           ()
+   | lvalue ASSIGN exp                     ()
+   | WHILE exp DO exp                      ()
+   | FOR ID ASSIGN exp TO exp DO exp       ()
+   | BREAK                                 ()
    
 expseq: exp ()
       | expseq SEMICOLON exp ()
@@ -93,11 +98,12 @@ recordCreate: typeid LBRACE RBRACE ()
 recordParams: ID EQ exp ()
             | ID EQ exp COMMA recordParams ()
 
-arrayCreate: ID LBRACK exp RBRACK OF exp ()
+arrayCreate: ID LBRACK exp RBRACK OF exp   ()
 
 lvalue: ID                                 ()
       | lvalue DOT ID                      ()
       | lvalue LBRACK exp RBRACK           ()
+      | ID LBRACK exp RBRACK               ()
 
 decs: dec                                  ()
     | decs dec                             ()

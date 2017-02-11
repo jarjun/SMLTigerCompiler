@@ -128,5 +128,7 @@ tyfields: ID COLON typeid                  ()
 typeid : ID                                ()
 
 funDec: FUNCTION ID LPAREN tyfields RPAREN EQ exp ()
+      | FUNCTION ID LPAREN RPAREN EQ exp ()
       | FUNCTION ID LPAREN tyfields RPAREN COLON typeid EQ exp ()
+      | FUNCTION ID LPAREN RPAREN COLON typeid EQ exp ()
    

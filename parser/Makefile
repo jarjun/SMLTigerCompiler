@@ -1,5 +1,5 @@
 parse:
-	sml sources.cm
+	echo 'Parse.parse "$(file)";' | sml sources.cm
 loop:
 	echo 'Parse.parse "../book-code/testcases/test$(num).tig";' | sml sources.cm
 

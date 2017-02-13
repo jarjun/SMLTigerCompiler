@@ -1,1 +1,17 @@
-1 - (2*3) = (-4 | 6)
+let 
+	function a() = 3
+	function b() = 4
+
+	type c = int
+	type d = c
+
+	var a := 5
+
+	function newFn(q:int, w:int, e:int):int = 4
+
+	type rec = {a:int, s:int}
+
+in
+	1 - (2*3) = (-4 | 6);
+	123+4
+end

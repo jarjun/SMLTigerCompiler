@@ -53,7 +53,7 @@ fun print (outstream, e0) =
 			 sayln ","; exp(e,d+1);
 			 say ")")
 	     in indent d; say "RecordExp("; say(Symbol.name typ); 
-	        sayln ",["; dolist d f fields; say "])" 
+	        say ",["; dolist d f fields; say "])" 
 	    end
     | exp(A.SeqExp l, d) = (indent d; say "SeqExp["; dolist d exp (map #1 l); 
 			    say "]")

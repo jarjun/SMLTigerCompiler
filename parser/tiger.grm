@@ -12,10 +12,10 @@ structure A = Absyn
   | BREAK | NIL
   | FUNCTION | VAR | TYPE | UMINUS
 
-%nonterm  exp of A.exp | expseq of (A.exp * pos) list | program of A.exp | varDec of A.dec | funDecs of A.fundec list | funDec of A.fundec 
+%nonterm  exp of A.exp | expseq of (A.exp * A.pos) list | program of A.exp | varDec of A.dec | funDecs of A.fundec list | funDec of A.fundec 
          | tyDec of {name:A.symbol, ty:A.ty, pos:A.pos} | tyDecs of {name:A.symbol, ty:A.ty, pos:A.pos} list | dec of A.dec| decs of A.dec list
          | ty of A.ty| tyfields of A.field list | typeid of A.symbol | logExp of A.exp
-         | funCall | params | lvalue | recordCreate | recordParams | arrayCreate | arrExtra
+         | funCall of A.exp | params of A.exp list| lvalue of A.var | recordCreate of A.exp| recordParams of (A.symbol*A.exp*A.pos) list| arrayCreate of A.exp
 
 %nonassoc ASSIGN
 %right DO 
@@ -54,31 +54,31 @@ program	: exp                          (exp)
 	
 exp: LET decs IN expseq END                (A.LetExp( {decs=decs, body=A.SeqExp(expseq), pos=LETleft} ))
    | LET decs IN END                       (A.LetExp( {decs=decs, body=A.SeqExp([]), pos=LETleft} ))
-   | STRING                                (A.IntExp(0))
-   | IF exp THEN exp                       (A.IntExp(0))
-   | IF exp THEN exp ELSE exp              (A.IntExp(0))
+   | STRING                                (A.StringExp(STRING, STRINGleft))
+   | IF exp THEN exp                       (A.IfExp( {test = exp1, then' = exp2, else' = NONE, pos=IFleft } ))
+   | IF exp THEN exp ELSE exp              (A.IfExp( {test = exp1, then' = exp2, else' = SOME(exp3), pos=IFleft } ))
    | logExp                                (logExp)
    | LPAREN exp RPAREN                     (exp)
-   | LPAREN RPAREN                         (A.IntExp(0))
-   | funCall                               (A.IntExp(0))
-   | LPAREN exp SEMICOLON expseq RPAREN    (A.IntExp(0))
-   | lvalue                                (A.IntExp(0))
+   | LPAREN RPAREN                         (A.SeqExp([]))
+   | funCall                               (funCall)
+   | LPAREN exp SEMICOLON expseq RPAREN    (A.SeqExp((exp,expleft)::expseq))
+   | lvalue                                (A.VarExp(lvalue))
    | NIL                                   (A.NilExp)
-   | recordCreate                          (A.IntExp(0))
-   | arrayCreate                           (A.IntExp(0))
-   | lvalue ASSIGN exp                     (A.IntExp(0))
-   | WHILE exp DO exp                      (A.IntExp(0))
-   | FOR ID ASSIGN exp TO exp DO exp       (A.IntExp(0))
+   | recordCreate                          (recordCreate)
+   | arrayCreate                           (arrayCreate)
+   | lvalue ASSIGN exp                     (A.AssignExp( {var=lvalue, exp=exp, pos=lvalueleft} ))
+   | WHILE exp DO exp                      (A.WhileExp( {test=exp1, body=exp2, pos=WHILEleft} ))
+   | FOR ID ASSIGN exp TO exp DO exp       (A.ForExp( {var=Symbol.symbol(ID), escape=ref true, lo=exp1, hi=exp2, body=exp3, pos=FORleft} ))
    | BREAK                                 (A.BreakExp(BREAKleft))
    
 expseq: exp                                ([ (exp, expleft) ])
       | expseq SEMICOLON exp               (expseq  @  [ (exp, expleft) ])
 
-funCall: ID LPAREN params RPAREN           (A.IntExp(0))
-       | ID LPAREN RPAREN                  (A.IntExp(0))  
+funCall: ID LPAREN params RPAREN           (A.CallExp( {func=Symbol.symbol(ID), args=params, pos=IDleft} ))
+       | ID LPAREN RPAREN                  (A.CallExp( {func=Symbol.symbol(ID), args=[], pos=IDleft} ))  
 
-params: exp                                (A.IntExp(0))
-      | exp COMMA params                   (A.IntExp(0))
+params: exp                                ([exp])
+      | exp COMMA params                   (exp::params)
 
 logExp: INT                                (A.IntExp(INT))
   | exp PLUS exp                           (A.OpExp( {left=exp1, oper=A.PlusOp, right=exp2, pos=exp1left} ))
@@ -95,18 +95,18 @@ logExp: INT                                (A.IntExp(INT))
   | exp OR exp                             (A.IfExp( {test = exp1, then' = A.IntExp(1), else' = SOME(exp2), pos=exp1left } ))
   | MINUS exp %prec UMINUS                 (A.OpExp( {left= A.IntExp(0), oper=A.MinusOp, right=exp, pos=expleft} ))
 
-recordCreate: typeid LBRACE RBRACE              (A.IntExp(0))
-            | typeid LBRACE recordParams RBRACE (A.IntExp(0))
+recordCreate: typeid LBRACE RBRACE              (A.RecordExp( {fields=[], typ=typeid, pos=typeidleft} ))
+            | typeid LBRACE recordParams RBRACE (A.RecordExp( {fields=recordParams, typ=typeid, pos=typeidleft} ))
 
-recordParams: ID EQ exp                    (A.IntExp(0))
-            | ID EQ exp COMMA recordParams (A.IntExp(0))
+recordParams: ID EQ exp                    ([(Symbol.symbol(ID), exp, IDleft)])
+            | ID EQ exp COMMA recordParams ((Symbol.symbol(ID), exp, IDleft)::recordParams)
 
-arrayCreate: ID LBRACK exp RBRACK OF exp   (A.IntExp(0))
+arrayCreate: ID LBRACK exp RBRACK OF exp   (A.ArrayExp( {typ=Symbol.symbol(ID), size=exp1, init=exp2, pos=IDleft} ))
 
-lvalue: ID                                 (A.IntExp(0))
-      | lvalue DOT ID                      (A.IntExp(0))
-      | lvalue LBRACK exp RBRACK           (A.IntExp(0))
-      | ID LBRACK exp RBRACK               (A.IntExp(0))
+lvalue: ID                                 (A.SimpleVar(Symbol.symbol(ID), IDleft))
+      | lvalue DOT ID                      (A.FieldVar(lvalue, Symbol.symbol(ID), lvalueleft))
+      | lvalue LBRACK exp RBRACK           (A.SubscriptVar(lvalue, exp, lvalueleft))
+      | ID LBRACK exp RBRACK               (A.SubscriptVar(A.SimpleVar(Symbol.symbol(ID), IDleft), exp, IDleft))
 
 decs: dec                                  ([dec])
     | decs dec                             (decs @ [dec])

@@ -1,5 +1,5 @@
 parse:
-	echo 'Parse.parse "$(file)";' | sml sources.cm
+	echo 'Main.compile "$(file)"; PrintAbsyn.print(TextIO.openOut("result.txt"), it);' | sml sources.cm
 loop:
 	echo 'Parse.parse "../book-code/testcases/test$(num).tig";' | sml sources.cm
 

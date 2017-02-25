@@ -10,7 +10,6 @@ prabsyn.sml
 table.sig
 table.sml
 symbol.sml
-types.sml
 $/smlnj-lib.cm
 $/ml-yacc-lib.cm
 $/basis.cm

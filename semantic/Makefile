@@ -8,3 +8,6 @@ test:
 
 custom:
 	echo 'Parse.parse "../custom-testcases/test$(firstword $(filter-out $@,$(MAKECMDGOALS))).tig"; PrintAbsyn.print(TextIO.openOut("result.txt"), it);' | sml sources.cm
+
+semant: 
+	echo 'Main.compile "$(file)";' | sml sources.cm

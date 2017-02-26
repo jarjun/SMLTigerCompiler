@@ -18,6 +18,21 @@ struct
 	fun checkInt ({exp,ty}, pos) = case ty of Types.INT => ()
 										      | _       => ErrorMsg.error pos "integer required";
 
+	fun resolve_type (tenv,Types.NAME(sym, tyRef), pos) = 
+		let fun helper (NONE) = (ErrorMsg.error pos "type not defined"; Types.INT) 
+			  | helper (SOME ty)  = resolve_type(tenv, ty, pos)
+		in 
+			helper (!tyRef)
+		end
+	  | resolve_type (tenv, ty:ty, pos) = ty
+
+	fun actual_ty (tenv,sym:Symbol.symbol, pos) = 
+		let val result = Symbol.look(tenv, sym)
+		in
+			case result of SOME(res) => resolve_type(tenv, res, pos)
+						 | NONE 	 => (ErrorMsg.error pos "type not defined"; Types.INT) 
+		end
+
 	fun checkComparable ({exp=expL,ty=Types.INT}, {exp=expR,ty=Types.INT}, pos) = ()
 	   |checkComparable ({exp=expL,ty=Types.STRING}, {exp=expR,ty=Types.STRING}, pos) = ()
 	   |checkComparable ({exp=expL,ty=_}, {exp=expR,ty=_}, pos) = ErrorMsg.error pos "matching int/str required";
@@ -30,7 +45,7 @@ struct
 	   |checkEqualComparable ({exp=expL,ty=Types.NIL}, {exp=expR,ty=Types.RECORD _}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=_}, {exp=expR,ty=_}, pos) = ErrorMsg.error pos "matching types required for equality check";
 
-
+	 fun sameType(type1:ty, type2:ty) = (type1 = type2) (*TODO: actually deal with types here: records?*)
 
 
 	fun transExp(venv, tenv, exp) = 
@@ -115,7 +130,7 @@ struct
 
 			 and trvar (A.SimpleVar(id, pos)) = (* nonexhaustive *)
 			 	   (case Symbol.look(venv, id) 
-			 	   	of SOME(Env.VarEntry{ty}) => {exp=(), ty=ty}  (* TODO: deal w/ actual_ty *)
+			 	   	of SOME(Env.VarEntry{ty}) => {exp=(), ty=resolve_type(tenv,ty,pos)}  (* TODO: deal w/ actual_ty *)
 			 	   	 | SOME(Env.FunEntry{...}) => (ErrorMsg.error pos ("undefined variable " ^ Symbol.name id); {exp=(), ty=Types.INT})
 			 	   	 | NONE                 => (ErrorMsg.error pos ("undefined variable " ^ Symbol.name id); {exp=(), ty=Types.INT}))
 
@@ -126,13 +141,23 @@ struct
 		   |transDecs(venv, tenv, decs) = 
 
 		   let fun trdec (A.VarDec{name, typ=NONE, init, escape, pos}, {venv, tenv}) = 
-		   		let val {exp, ty=typ} = transExp(venv, tenv, init)
+		   			let val {exp, ty=typ} = transExp(venv, tenv, init)
 		   		
-		   		in {tenv=tenv, 
-		   			venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})}
-		   		end
+		   			in {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})}
+		   			end
+
+		   		  |trdec ((A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv})) =
+		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init)
+		   		
+		   			in 
+		   				if sameType(actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
+		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})} 
+		   				else (ErrorMsg.error pos "variable has incorrect type"; {tenv=tenv, venv=venv}) (* TODO not adding to symbol table? *)
+		   			end 
 
 		   		  |trdec(_) = {venv=venv, tenv=tenv}
+		   		
+
 		   	in foldl trdec {venv=venv, tenv=tenv} decs
 		   	end
 

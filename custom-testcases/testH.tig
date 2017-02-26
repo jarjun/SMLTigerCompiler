@@ -1,1 +1,4 @@
-nil = 3
+let var a := 3+3+5+(8*8)
+in 
+a="abc"
+end

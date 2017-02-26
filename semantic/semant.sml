@@ -5,7 +5,7 @@ sig
 	val transProg: A.exp -> unit
 end
 
-structure Semant :> SEMANT = 
+structure Semant : SEMANT = 
 struct
 
 	structure Translate = struct type exp = unit end
@@ -13,7 +13,7 @@ struct
 	type ty = Types.ty
 	type venv = Env.enventry Symbol.table
 	type tenv = ty Symbol.table
-	type expty = {exp: Translate.exp, ty:Types.ty}
+	type expty = {exp: Translate.exp, ty:ty}
 	
 	fun checkInt ({exp,ty}, pos) = case ty of Types.INT => ()
 										      | _       => ErrorMsg.error pos "integer required";
@@ -29,6 +29,8 @@ struct
 	   |checkEqualComparable ({exp=expL,ty=Types.RECORD _}, {exp=expR,ty=Types.NIL}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=Types.NIL}, {exp=expR,ty=Types.RECORD _}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=_}, {exp=expR,ty=_}, pos) = ErrorMsg.error pos "matching types required for equality check";
+
+
 
 
 	fun transExp(venv, tenv, exp) = 
@@ -81,18 +83,58 @@ struct
 
 				|trexp (A.OpExp{left, oper=A.NeqOp, right, pos}) = 
 					  (checkEqualComparable(trexp left, trexp right, pos);
-					  {exp=(), ty=Types.INT})	
+					  {exp=(), ty=Types.INT})
 
 
+
+				|trexp (A.LetExp{decs, body, pos}) =
+				    let val {venv=venv', tenv=tenv'} = 
+				  		transDecs(venv, tenv, decs)
+				  	in 	transExp(venv', tenv', body)
+				  	end
+
+				|trexp (A.SeqExp (explist)) =
+					let fun checkSeq [] = {exp=(), ty=Types.UNIT}
+						   |checkSeq [(exp, pos)] = trexp(exp)
+						   |checkSeq ((exp, pos)::rest) = (trexp(exp); checkSeq(rest))
+					in 
+						checkSeq(explist)
+					end
+
+
+				|trexp (A.VarExp(var)) = trvar(var)
 
 				(* Primitives *)
 				|trexp(A.IntExp(num)) = {exp=(), ty=Types.INT}
 				|trexp(A.StringExp(str)) = {exp=(), ty=Types.STRING}
+				|trexp(A.NilExp) = {exp=(), ty=Types.NIL} 
 
 
 			    |trexp (_) = (ErrorMsg.error 0 "unknown expression"; {exp=(), ty=Types.INT}) (* default *)
 
+
+			 and trvar (A.SimpleVar(id, pos)) = (* nonexhaustive *)
+			 	   (case Symbol.look(venv, id) 
+			 	   	of SOME(Env.VarEntry{ty}) => {exp=(), ty=ty}  (* TODO: deal w/ actual_ty *)
+			 	   	 | SOME(Env.FunEntry{...}) => (ErrorMsg.error pos ("undefined variable " ^ Symbol.name id); {exp=(), ty=Types.INT})
+			 	   	 | NONE                 => (ErrorMsg.error pos ("undefined variable " ^ Symbol.name id); {exp=(), ty=Types.INT}))
+
+
 		in trexp(exp) end
+
+	and transDecs(venv, tenv, []) = {venv=venv, tenv=tenv}
+		   |transDecs(venv, tenv, decs) = 
+
+		   let fun trdec (A.VarDec{name, typ=NONE, init, escape, pos}, {venv, tenv}) = 
+		   		let val {exp, ty=typ} = transExp(venv, tenv, init)
+		   		
+		   		in {tenv=tenv, 
+		   			venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})}
+		   		end
+
+		   		  |trdec(_) = {venv=venv, tenv=tenv}
+		   	in foldl trdec {venv=venv, tenv=tenv} decs
+		   	end
 
 	fun transProg(expr) = let val final = transExp(Env.base_venv, Env.base_tenv, expr)
 						  in () end

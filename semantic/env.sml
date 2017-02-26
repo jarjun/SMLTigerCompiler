@@ -17,7 +17,12 @@ struct
 					  | FunEntry of {formals: ty list, result: ty}
 
 	val base_tenv = let val emptyMap:(ty Symbol.table) = Symbol.empty
-					in Symbol.enter(emptyMap, Symbol.symbol("int"), Types.INT)
+						val defaultTypeList = [(Symbol.symbol("int"), Types.INT),
+											   (Symbol.symbol("string"), Types.STRING)]
+						fun helper ( (symb, typ) , running) = Symbol.enter(running, symb, typ)
+
+					in
+						foldl helper emptyMap defaultTypeList
 					end
 
 	val base_venv = let val emptyMap:(enventry Symbol.table) = Symbol.empty

@@ -6,3 +6,16 @@ let var a:string := "m"
 in 
 1+2
 end
+
++ 
+
+
+let var a2:string := "m"
+	
+in 
+	let var a3:int := 4
+	in 
+		a2+a3
+	end;
+	a3 + a
+end

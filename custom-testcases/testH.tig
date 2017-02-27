@@ -1,4 +1,8 @@
-let var a:string := m
+let var a:string := "m"
+	type new = array of int
+	type b = new
+	type rec = {id1:new, id2:b, id3:string}
+	type c = array of rec
 in 
-a="a"
+1+2
 end

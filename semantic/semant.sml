@@ -19,7 +19,7 @@ struct
 										      | _       => ErrorMsg.error pos "integer required";
 
 	fun resolve_type (tenv,Types.NAME(sym, tyRef), pos) = 
-		let fun helper (NONE) = (ErrorMsg.error pos "type not defined"; Types.INT) 
+		let fun helper (NONE) = (ErrorMsg.error pos ("type " ^ (Symbol.name sym) ^ " not defined"); Types.INT) 
 			  | helper (SOME ty)  = resolve_type(tenv, ty, pos)
 		in 
 			helper (!tyRef)
@@ -30,7 +30,7 @@ struct
 		let val result = Symbol.look(tenv, sym)
 		in
 			case result of SOME(res) => resolve_type(tenv, res, pos)
-						 | NONE 	 => (ErrorMsg.error pos "type not defined"; Types.INT) 
+						 | NONE 	 => (ErrorMsg.error pos ("type " ^ (Symbol.name sym) ^ " not defined"); Types.INT) 
 		end
 
 	fun checkComparable ({exp=expL,ty=Types.INT}, {exp=expR,ty=Types.INT}, pos) = ()
@@ -146,7 +146,7 @@ struct
 		   			in {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})}
 		   			end
 
-		   		  |trdec ((A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv})) =
+		   		  |trdec (A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv}) =
 		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init)
 		   		
 		   			in 
@@ -154,6 +154,55 @@ struct
 		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})} 
 		   				else (ErrorMsg.error pos "variable has incorrect type"; {tenv=tenv, venv=venv}) (* TODO not adding to symbol table? *)
 		   			end 
+
+		   		  |trdec (A.TypeDec(declist), {venv, tenv}) = 
+		   		  	let fun processTyDec (tenv, venv, {name, ty=A.NameTy(typ, tyPos), pos}) = 
+				   		  		let val typName = Symbol.look(tenv, typ)
+				   		  			val toRef = (if isSome(typName) 
+				   		  						 then typName
+				   		  						 else ((ErrorMsg.error tyPos ("type " ^ Symbol.name typ ^ " not declared")); NONE))
+				   		  		in
+				   		  			if isSome(toRef) then (actual_ty(tenv, typ, tyPos); ()) else ();
+				   		  			{tenv=Symbol.enter(tenv, 
+				   		  							   name, 
+				   		  							   Types.NAME (typ, (ref toRef) )), 
+				   		  			 venv=venv}
+				   		  		end
+
+		   		  		   |processTyDec (tenv, venv, {name, ty=A.RecordTy(fieldlist), pos}) = 
+		   		  		   		let fun addField ({name, escape, typ, pos}, running) = 
+		   		  		   			let val typAdd = Symbol.look(tenv, typ)
+		   		  		   				val typCheck = if isSome(typAdd) then valOf(typAdd) else (ErrorMsg.error pos ("type " ^ Symbol.name typ ^ " not declared"); Types.INT)
+		   		  		   			in
+		   		  		   				if isSome(typAdd) then (actual_ty(tenv, typ, pos); ()) else ();
+		   		  		   				running @ [(name, typCheck)]
+		   		  		   			end
+		   		  		   		in 
+		   		  		   			{tenv=Symbol.enter(tenv, name, Types.RECORD((foldl addField [] fieldlist), ref ())),
+		   		  		   			 venv = venv} 
+		   		  		   		end
+
+		   		  		   |processTyDec (tenv, venv, {name, ty=A.ArrayTy(typ, tyPos), pos}) = 
+		   		  		   		let val typOption = Symbol.look(tenv, typ)
+		   		  		   			val typCheck = if isSome(typOption) then valOf(typOption) else (ErrorMsg.error pos ("type " ^ Symbol.name typ ^ " not declared"); Types.INT)
+		   		  		   		in
+		   		  		   			if isSome(typOption) then (actual_ty(tenv, typ, pos); ()) else ();
+		   		  		   			{tenv=Symbol.enter(tenv, name, Types.ARRAY(typCheck, ref ())),
+		   		  		   			 venv = venv}
+		   		  		   		end
+
+
+		   		  		fun enterDecs (tenv, venv, []) = {tenv=tenv, venv=venv}
+		   		  		   |enterDecs (tenv, venv, [dec]) = processTyDec(tenv, venv, dec)
+		   		  		   |enterDecs (tenv, venv, (dec::rest)) = 
+		   		  		   		let val {venv=venv', tenv=tenv'} = processTyDec(tenv, venv, dec) 
+		   		  		   		in
+		   		  		   			enterDecs(tenv', venv', rest)
+								end
+					in
+						enterDecs(tenv, venv, declist)
+					end
+		   		  
 
 		   		  |trdec(_) = {venv=venv, tenv=tenv}
 		   		

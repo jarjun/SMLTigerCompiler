@@ -220,12 +220,18 @@ struct
 		   		  		   			let val typAdd = Symbol.look(tenv, typ)
 		   		  		   				val typCheck = if isSome(typAdd) then valOf(typAdd) else (ErrorMsg.error pos ("type " ^ Symbol.name typ ^ " not declared"); Types.INT)
 		   		  		   			in
-		   		  		   				if isSome(typAdd) then (actual_ty(tenv, typ, pos); ()) else ();
+		   		  		   				(*if isSome(typAdd) then (actual_ty(tenv, typ, pos); ()) else ();*)
 		   		  		   				running @ [(name, typCheck)]
 		   		  		   			end
+		   		  		   			val ourName = valOf(Symbol.look(tenv, name))
+		   		  		   			val recTyp = SOME(Types.RECORD((foldl addField [] fieldlist), ref ()))
+		   		  		   			fun updateRef (Types.NAME(name, otherRef), thingToUpdateTo) = ((otherRef := thingToUpdateTo); ())
+				   		  			   |updateRef (_) = ()
 		   		  		   		in 
-		   		  		   			{tenv=Symbol.enter(tenv, name, Types.RECORD((foldl addField [] fieldlist), ref ())),
-		   		  		   			 venv = venv} 
+   	   		  		   			  (*{tenv=Symbol.enter(tenv, name, Types.RECORD((foldl addField [] fieldlist), ref ())),
+		   		  		   			 venv = venv} *)
+		   		  		   			updateRef(ourName, recTyp);
+		   		  		   			{tenv=tenv, venv=venv}
 		   		  		   		end
 
 		   		  		   |processTyDec (tenv, venv, {name, ty=A.ArrayTy(typ, tyPos), pos}) = 

@@ -75,7 +75,7 @@ in 0 end
 
 
 
-
+/*
 
 let 
 	type b = array of a
@@ -89,16 +89,18 @@ in
 end
 
 
+*/
 
 
-/*
-
-let type r = {num:int}
-	var rec:r := {num = 2}
+let type q = {here: f, hello:a}
+	type f = {this: r}
+	type r = {num:a, num2:v}
+	type a = v
+	type v = int
 in
 1
 end
-*/
+
 
 
 

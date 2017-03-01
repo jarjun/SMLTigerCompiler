@@ -1,3 +1,4 @@
+/*
 let var a:string := "m"
 	type new = array of int
 	type b = new
@@ -19,3 +20,87 @@ in
 	end;
 	a3 + a
 end
+*/
+
+/* REMEMBER THIS
+let type a = array of v
+	type v = int
+	type a = array of v
+in
+0
+end
+*/
+
+
+/*
+let type a = array of b
+	type b = array of v
+	type v = int
+in
+0
+end
+*/
+
+
+
+/*
+let
+	type a = int
+	type b = a
+	var asdasd:=2
+	type a = string
+
+	
+in
+
+
+	let var asd:b := 1
+		var two:a := "abc"
+	in end
+
+end
+*/
+
+
+/*
+let type a = b
+	type b = c
+	type c = d
+	type d = e
+	type e = int
+	var num:a := 5
+in 0 end
+*/
+
+
+
+
+
+
+let 
+	type b = array of a
+	type a = array of v
+	type v = int
+	
+
+	var arr:b := b[10] of a[10] of 8
+in
+1
+end
+
+
+
+
+/*
+
+let type r = {num:int}
+	var rec:r := {num = 2}
+in
+1
+end
+*/
+
+
+
+
+

@@ -24,6 +24,7 @@ struct
 		in 
 			helper (!tyRef)
 		end
+	  (*| resolve_type (tenv, Types.ARRAY(typ, re), pos) = resolve_type(tenv, typ, pos) *)
 	  | resolve_type (tenv, ty:ty, pos) = ty
 
 	fun actual_ty (tenv,sym:Symbol.symbol, pos) = 
@@ -32,6 +33,23 @@ struct
 			case result of SOME(res) => resolve_type(tenv, res, pos)
 						 | NONE 	 => (ErrorMsg.error pos ("type " ^ (Symbol.name sym) ^ " not defined"); Types.INT) 
 		end
+
+(*	fun printType (ty:Types.INT) = (print("INT\n"); ())
+	   |printType (ty:Types.NAME) = (print("NAME\n"); ())
+	   |printType (Types.ARRAY(t,r)) = (print("ARRAY\n"); printType(t); ())
+	   |printType (ty:Types.RECORD) = (print("RECORD\n"); ())
+	   |printType (ty:Types.UNIT) = (print("UNIT\n"); ())
+	   |printType (ty:Types.STRING) = (print("STRING\n"); ())
+	   |printType (ty:Types.NIL) = (print("NIL\n"); ())*)
+
+	fun typeToString (Types.INT) = "INT"
+	   |typeToString (Types.NAME(s,t)) = "NAME"
+	   |typeToString (Types.ARRAY(t,r)) = "ARRAY OF " ^ typeToString(t)
+	   |typeToString (Types.RECORD(l, u)) = "RECORD"
+	   |typeToString (Types.UNIT) = "UNIT"
+	   |typeToString (Types.STRING) = "STRING"
+	   |typeToString (Types.NIL) = "NIL"
+
 
 	fun checkComparable ({exp=expL,ty=Types.INT}, {exp=expR,ty=Types.INT}, pos) = ()
 	   |checkComparable ({exp=expL,ty=Types.STRING}, {exp=expR,ty=Types.STRING}, pos) = ()
@@ -45,8 +63,13 @@ struct
 	   |checkEqualComparable ({exp=expL,ty=Types.NIL}, {exp=expR,ty=Types.RECORD _}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=_}, {exp=expR,ty=_}, pos) = ErrorMsg.error pos "matching types required for equality check";
 
-	 fun sameType(type1:ty, type2:ty) = (type1 = type2) (*TODO: actually deal with types here: records?*)
+	 (* not checking refs sameType *)
+	 fun sameType(tenv, pos, Types.ARRAY(typ1, refr1), Types.ARRAY(typ2, refr2)) = sameType(tenv, pos, resolve_type(tenv, typ1, pos), resolve_type(tenv, typ2, pos))
 
+	    |sameType(tenv, pos, type1:ty, type2:ty) = (resolve_type(tenv, type1, pos) = resolve_type(tenv, type2, pos)) (*TODO: actually deal with types here: records?*)
+
+	 fun getArrayType(Types.ARRAY(t, r), pos) = t
+	 	|getArrayType(_, pos) = (ErrorMsg.error pos "Array not of array type"; Types.INT)
 
 	fun transExp(venv, tenv, exp) = 
 		let fun 
@@ -101,7 +124,7 @@ struct
 					  {exp=(), ty=Types.INT})
 
 
-
+				(* others *)
 				|trexp (A.LetExp{decs, body, pos}) =
 				    let val {venv=venv', tenv=tenv'} = 
 				  		transDecs(venv, tenv, decs)
@@ -115,6 +138,23 @@ struct
 					in 
 						checkSeq(explist)
 					end
+
+
+				|trexp(A.ArrayExp{typ=typ, size=siz, init=initial, pos=pos}) = 
+					(
+					checkInt(trexp siz, pos);
+					if sameType(tenv, pos, #ty (trexp(initial))  , 
+								 resolve_type(tenv, getArrayType(actual_ty(tenv, typ, pos), pos)
+
+								 (*
+									let val lookUpType = Symbol.look(tenv, typ)
+									in
+										if isSome(lookUpType) then getArrayType(resolve_type(tenv, valOf(lookUpType), pos), pos) else (ErrorMsg.error pos "Array type undefined"; Types.INT)
+									end*), pos))
+
+							then () else ErrorMsg.error pos "Array initial value type mismatch";
+
+					{exp=(), ty = Types.ARRAY(resolve_type (tenv, #ty (trexp(initial)) , pos), ref ())})
 
 
 				|trexp (A.VarExp(var)) = trvar(var)
@@ -150,23 +190,29 @@ struct
 		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init)
 		   		
 		   			in 
-		   				if sameType(actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
+		   				if sameType(tenv, pos, actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
 		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})} 
-		   				else (ErrorMsg.error pos "variable has incorrect type"; {tenv=tenv, venv=venv}) (* TODO not adding to symbol table? *)
+		   				else (ErrorMsg.error pos ("variable has incorrect type: expected " ^typeToString(actual_ty(tenv,declaredType,tyPos))^ " got " ^typeToString(resolve_type(tenv,typ,pos))); {tenv=tenv, venv=venv}) (* TODO not adding to symbol table? *)
 		   			end 
 
 		   		  |trdec (A.TypeDec(declist), {venv, tenv}) = 
 		   		  	let fun processTyDec (tenv, venv, {name, ty=A.NameTy(typ, tyPos), pos}) = 
 				   		  		let val typName = Symbol.look(tenv, typ)
+				   		  			val ourName = valOf(Symbol.look(tenv, name))
+				   		  			fun updateRef (Types.NAME(name, otherRef), thingToUpdateTo) = ((otherRef := thingToUpdateTo); ())
+				   		  			   |updateRef (_) = ()
+
 				   		  			val toRef = (if isSome(typName) 
 				   		  						 then typName
 				   		  						 else ((ErrorMsg.error tyPos ("type " ^ Symbol.name typ ^ " not declared")); NONE))
 				   		  		in
-				   		  			if isSome(toRef) then (actual_ty(tenv, typ, tyPos); ()) else ();
-				   		  			{tenv=Symbol.enter(tenv, 
+				   		  			(* if isSome(toRef) then (actual_ty(tenv, typ, tyPos); ()) else (); removed bc NONE first pass*)
+				   		  			updateRef(ourName, toRef);
+				   		  			{tenv=tenv, venv=venv}
+				   		  			(*{tenv=Symbol.enter(tenv, 
 				   		  							   name, 
-				   		  							   Types.NAME (typ, (ref toRef) )), 
-				   		  			 venv=venv}
+				   		  							   Types.NAME (name, (ref toRef) )), 
+				   		  			 venv=venv}*)
 				   		  		end
 
 		   		  		   |processTyDec (tenv, venv, {name, ty=A.RecordTy(fieldlist), pos}) = 
@@ -183,12 +229,18 @@ struct
 		   		  		   		end
 
 		   		  		   |processTyDec (tenv, venv, {name, ty=A.ArrayTy(typ, tyPos), pos}) = 
-		   		  		   		let val typOption = Symbol.look(tenv, typ)
+		   		  		   		let val ourName = valOf(Symbol.look(tenv, name))
+		   		  		   			val typOption = Symbol.look(tenv, typ)
 		   		  		   			val typCheck = if isSome(typOption) then valOf(typOption) else (ErrorMsg.error pos ("type " ^ Symbol.name typ ^ " not declared"); Types.INT)
+		   		  		   			val arrTyp = SOME(Types.ARRAY(typCheck, ref ()))
+		   		  		   			fun updateRef (Types.NAME(name, otherRef), thingToUpdateTo) = ((otherRef := thingToUpdateTo); ())
+				   		  			   |updateRef (_) = ()
 		   		  		   		in
-		   		  		   			if isSome(typOption) then (actual_ty(tenv, typ, pos); ()) else ();
-		   		  		   			{tenv=Symbol.enter(tenv, name, Types.ARRAY(typCheck, ref ())),
-		   		  		   			 venv = venv}
+		   		  		   			(* actual_ty(tenv, name, pos); *)
+		   		  		   			(*{tenv=Symbol.enter(tenv, name, Types.ARRAY(typCheck, ref ())),
+		   		  		   			 venv = venv}*)
+		   		  		   			updateRef(ourName, arrTyp);
+		   		  		   			{tenv=tenv, venv=venv}
 		   		  		   		end
 
 
@@ -199,8 +251,19 @@ struct
 		   		  		   		in
 		   		  		   			enterDecs(tenv', venv', rest)
 								end
+
+						fun initDecs (tenv, venv, []) = {tenv=tenv, venv=venv}
+						   |initDecs (tenv, venv, [{name, ty, pos}]) = (print(Symbol.name(name) ^ "\n"); {tenv = Symbol.enter (tenv, name, Types.NAME (name, (ref NONE)) ), venv=venv})
+						   |initDecs (tenv, venv, {name,ty,pos}::rest) = 
+		   		  		   		let val {venv=venv', tenv=tenv'} = (print(Symbol.name(name) ^ "\n"); {tenv = Symbol.enter (tenv, name, Types.NAME (name, (ref NONE)) ), venv=venv})
+		   		  		   		in
+		   		  		   			initDecs(tenv', venv', rest)
+								end
 					in
-						enterDecs(tenv, venv, declist)
+						let val {venv=venv', tenv=tenv'} = initDecs(tenv, venv, declist)						
+						in 
+							enterDecs(tenv', venv', declist)
+						end
 					end
 		   		  
 

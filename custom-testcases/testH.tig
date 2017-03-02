@@ -91,7 +91,7 @@ end
 
 */
 
-
+/*
 let type q = {here: f, hello:a}
 	type f = {this: r}
 	type r = {num:a, num2:v}
@@ -100,9 +100,44 @@ let type q = {here: f, hello:a}
 in
 1
 end
+*/
+
+
+
+/* keep this for arr references */
+let 
+	type b = array of i
+	type i = array of o
+	type o = array of p
+	type p = array of a
+	type a = array of v
+
+	type v = r
+	type r = t
+	type t = int
+
+	var arr1:b := b[10] of i[10] of o[10] of p[1] of a[1] of 9
+	
+	var arr2 := p[10] of a[10] of 0
+
+	var n:a := arr2 [1]
+	var m:int := n [1]
+
+
+in 
+arr1[0][0][0][0][0] + n [ n[0] + (n[0] - 2) * let var a := 4 in a end ]
+end
 
 
 
 
-
+/*
+let 
+	type a = array of b
+	type b = array of int
+	var arr:a := a[10] of b[10] of 1
+in
+arr[0][0]
+end
+*/
 

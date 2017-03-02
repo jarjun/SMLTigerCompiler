@@ -103,8 +103,8 @@ end
 */
 
 
-
 /* keep this for arr references */
+/* 
 let 
 	type b = array of i
 	type i = array of o
@@ -127,8 +127,47 @@ let
 in 
 arr1[0][0][0][0][0] + n [ n[0] + (n[0] - 2) * let var a := 4 in a end ]
 end
+*/
+
+/*
+let
+	type a = reeee
+	type rec = {id1:a, id2:rec2electricboogaloo, id3:string}
+
+	type reeee = array of int
+	type m = array of int
+
+	type rec2electricboogaloo = {id1:a, id2:int, id3:string}
+	var c := 6
+	var d := rec2electricboogaloo{id1=a[5] of 4, id2=4, id3="str"}
+	var b:rec  := rec{id2=rec2electricboogaloo{id1=a[5] of 4, id2=4, id3="str"}, id3 = "str", id1=a[10] of 0}
+
+	type rec2 = {id1: int}
+	type arr = array of rec2
+	type rec3 = {id2:arr}
+	var e:rec3 := rec3	{id2=arr[4] of rec2{id1=5}}
+
+	var f:rec3 := rec3	{id2=arr[4] of rec2{id1=8}}
 
 
+
+	var n := f = e
+
+in
+e.id2[3].id1 + 4
+end
+*/
+
+let type a = array of int
+	type b = array of int
+
+	var arr1 := a[10] of 0
+	var arr2 := b[1] of 0
+
+	/* shouldn't check out */
+	var bool := arr1 = arr2
+
+in end
 
 
 /*

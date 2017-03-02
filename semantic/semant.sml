@@ -52,22 +52,22 @@ struct
 
 	fun checkEqualComparable ({exp=expL,ty=Types.INT}, {exp=expR,ty=Types.INT}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=Types.STRING}, {exp=expR,ty=Types.STRING}, pos) = ()
-	   |checkEqualComparable ({exp=expL,ty=Types.RECORD _}, {exp=expR,ty=Types.RECORD _}, pos) = ()	   
-	   |checkEqualComparable ({exp=expL,ty=Types.ARRAY _}, {exp=expR,ty=Types.ARRAY _}, pos) = ()
+	   |checkEqualComparable ({exp=expL,ty=Types.RECORD(_, refr1)}, {exp=expR,ty=Types.RECORD(_, refr2)}, pos) = if refr1 = refr2 then () else (ErrorMsg.error pos "matching record types required for equality check";())	   
+	   |checkEqualComparable ({exp=expL,ty=Types.ARRAY(_, refr1)}, {exp=expR,ty=Types.ARRAY(_,refr2)}, pos) = if refr1 = refr2 then () else (ErrorMsg.error pos "matching array types required for equality check";())
 	   |checkEqualComparable ({exp=expL,ty=Types.RECORD _}, {exp=expR,ty=Types.NIL}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=Types.NIL}, {exp=expR,ty=Types.RECORD _}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=_}, {exp=expR,ty=_}, pos) = ErrorMsg.error pos "matching types required for equality check";
 
 	 (* not checking refs sameType *)
-	 fun sameType(tenv, pos, Types.ARRAY(typ1, refr1), Types.ARRAY(typ2, refr2)) = 
-	 		(refr1 = refr2) andalso (sameType(tenv, pos, resolve_type(tenv, typ1, pos), resolve_type(tenv, typ2, pos)))
-
+	fun sameType(tenv, pos, Types.ARRAY(typ1, refr1), Types.ARRAY(typ2, refr2)) = 
+	 		(refr1 = refr2) andalso (sameType(tenv, pos, resolve_type(tenv, typ1, pos), resolve_type(tenv, typ2, pos))) (*might not the andalso part*)
+	 	|sameType(tenv, pos, Types.RECORD(typ1, refr1), Types.RECORD(typ2, refr2)) = refr1 = refr2
 	    |sameType(tenv, pos, type1:ty, type2:ty) = (resolve_type(tenv, type1, pos) = resolve_type(tenv, type2, pos)) (*TODO: actually deal with types here: records?*)
 
-	 fun getArrayType(Types.ARRAY(t, r), pos) = t
+	fun getArrayType(Types.ARRAY(t, r), pos) = t
 	 	|getArrayType(_, pos) = (ErrorMsg.error pos "Array not of array type"; Types.INT)
 
-	 fun getArrayRef(Types.ARRAY(t, r), pos) = r
+	fun getArrayRef(Types.ARRAY(t, r), pos) = r
 	 	|getArrayRef(_, pos) = (ErrorMsg.error pos "Array not of array type"; ref ())
 
 	fun transExp(venv, tenv, exp) = 
@@ -148,8 +148,28 @@ struct
 
 					{exp=(), ty = actual_ty(tenv, typ, pos)})
 
+				|trexp(A.RecordExp{fields=f, typ=typ, pos=pos}) = 
+					(let val Types.NAME(s, r) = if isSome(Symbol.look(tenv, typ)) then  valOf(Symbol.look(tenv, typ)) else (ErrorMsg.error pos "Undefined record type"; Types.NAME(typ, ref NONE)) (*TODO: clean this up*)
+						 val arrRes = if isSome(!r) then !r else (ErrorMsg.error pos "Not a record type"; NONE)
+						 fun compareFields([], []) = ()
+						 	|compareFields([], expectedList) = ErrorMsg.error pos "Not all record parameters defined"
+						 	|compareFields(fieldlist, []) = ErrorMsg.error pos "Too many record parameters defined"
+						 	|compareFields(((sym, exp, pos)::rest), expectedList) = 
+							 	let val item = List.filter (fn (s, t) => Symbol.name(s) = Symbol.name(sym)) expectedList
+							 	in 
+							 		case item of [(s, t)] => (if sameType(tenv, pos, #ty(trexp(exp)), t) then () else ErrorMsg.error pos "Record parameter type mismatch"; compareFields(rest, 
+							 			                                                            List.filter (fn (s, t) => Symbol.name(s) <> Symbol.name(sym)) expectedList))
+							 			        |[]       => ErrorMsg.error pos ("Paramter error for " ^ Symbol.name(sym))
+							 			        |_        => ErrorMsg.error pos "Record parameter matches multiple fields" (*this should never happen*)
 
+							 	end
 
+					in 
+						case arrRes of SOME(Types.RECORD(symlist, uniq)) => compareFields(f, symlist)
+							       |_                   => ErrorMsg.error pos "Undefined record type"; 
+						{exp=(), ty = actual_ty(tenv, typ, pos)}
+					end
+					)
 
 
 				|trexp (A.VarExp(var)) = trvar(var)
@@ -176,6 +196,24 @@ struct
 
 			 			{exp=(), ty= resolve_type (tenv, getArrayType( resolve_type(tenv, varTy, pos), pos), pos)}
 			 		end
+			 	|trvar (A.FieldVar(var, sym, pos)) = 
+			 		let val {exp=_, ty=varTy} = trvar(var)
+			 			val recTy = resolve_type(tenv, varTy, pos)
+
+			 		in 
+			 			case recTy of Types.RECORD(l, u) => 
+			 				let val item = List.filter (fn (s, t) => Symbol.name(s) = Symbol.name(sym)) l
+
+			 				in
+			 					case item of [(s, t)] => {exp=(), ty=resolve_type(tenv, t, pos)}
+							 			        |[]       => (ErrorMsg.error pos ("Paramter error for " ^ Symbol.name(sym)); {exp=(), ty=Types.INT})
+							 			        |_        => (ErrorMsg.error pos "Record parameter matches multiple fields"; {exp=(), ty=Types.INT}) (*this should never happen*)
+
+			 				end
+			 				         |_                  => (ErrorMsg.error pos "variable not a record"; {exp=(), ty=Types.INT})
+			 		end
+
+
 
 		in trexp(exp) end
 

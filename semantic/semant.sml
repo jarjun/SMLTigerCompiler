@@ -14,6 +14,8 @@ struct
 	type venv = Env.enventry Symbol.table
 	type tenv = ty Symbol.table
 	type expty = {exp: Translate.exp, ty:ty}
+
+	val loopDepth = ref 0
 	
 
 
@@ -201,18 +203,20 @@ struct
 				|trexp (A.ForExp{var, escape, lo, hi, body, pos}) = 
 					(checkInt(trexp lo, pos);
 					checkInt(trexp hi, pos);
+					loopDepth := !loopDepth+1;
 					let val newVenv = Symbol.enter(venv, var, Env.VarEntry{ty=Types.INT})
 					in
 						if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body)), Types.UNIT)
-						then {exp=(), ty=Types.UNIT}
-						else (ErrorMsg.error pos "for loop body must return unit"; {exp=(), ty=Types.INT})
+						then (loopDepth := !loopDepth-1; {exp=(), ty=Types.UNIT})
+						else (loopDepth := !loopDepth-1; ErrorMsg.error pos "for loop body must return unit"; {exp=(), ty=Types.INT})
 					end)
 
 				|trexp (A.WhileExp{test, body, pos}) =
 					(checkInt(trexp test, pos);
+					loopDepth := !loopDepth+1;
 					if sameType(tenv, pos, #ty(transExp(venv, tenv, body)), Types.UNIT)
-					then {exp=(), ty=Types.UNIT}
-					else (ErrorMsg.error pos "while loop body must return unit"; {exp=(), ty=Types.INT}))
+					then (loopDepth := !loopDepth-1; {exp=(), ty=Types.UNIT})
+					else (loopDepth := !loopDepth-1; ErrorMsg.error pos "while loop body must return unit"; {exp=(), ty=Types.INT}))
 
 				|trexp (A.IfExp{test, then', else', pos}) = 
 					(checkInt(trexp test, pos);
@@ -230,14 +234,19 @@ struct
 					else ErrorMsg.error pos "variable and assigned expression don't have same type";
 					{exp=(), ty=Types.UNIT})
 
-				|trexp (A.BreakExp(pos)) = {exp=(), ty=Types.UNIT}
+				|trexp (A.BreakExp(pos)) = 
+					(if !loopDepth < 0
+					then ErrorMsg.error pos "loop depth negative, this should never happen" else ();
+					if !loopDepth > 0
+					then {exp=(), ty=Types.UNIT}
+					else (ErrorMsg.error pos "break expression outside of a loop";  {exp=(), ty=Types.UNIT}))
 
 
 				(* Primitives *)
 				|trexp(A.IntExp(num)) = {exp=(), ty=Types.INT}
 				|trexp(A.StringExp(str)) = {exp=(), ty=Types.STRING}
 				|trexp(A.NilExp) = {exp=(), ty=Types.NIL} 
-				
+
 
 			 and trvar (A.SimpleVar(id, pos)) = (* nonexhaustive *)
 			 	   (case Symbol.look(venv, id) 

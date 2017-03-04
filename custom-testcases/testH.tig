@@ -292,6 +292,7 @@ in
 end
 */
 
+/*
 let type rec = {a:int}
 	type r = {l: arr}
 	type arr = array of rec
@@ -303,6 +304,14 @@ in
 	c:= c := for a:=0 to 5 do (7;  (c:=())  );
 
 	b.l[0].a := 0
+end
+*/
+
+
+let var a:=5
+in
+	for a:= 1 to 6 do ();
+	for b:=0 to 10 do (while (break; a<10) do break; break)
 end
 
 

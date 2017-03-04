@@ -302,7 +302,77 @@ struct
 					end
 		   		  
 
-		   		  |trdec(_) = {venv=venv, tenv=tenv}
+				  |trdec(A.FunctionDec(fundeclist), {venv, tenv}) = 
+				  	let fun processFunDec( tenv, venv, {name, params, body, pos, result=SOME(rt, posi)} ) = 
+
+						  		let val newVenv = 
+						  			let fun putIntoNewVenv( {name, escape, typ, pos}, venv ) = Symbol.enter(venv, name, Env.VarEntry{ty= actual_ty(tenv, typ, pos)})
+							  			
+							  		in
+							  			foldl putIntoNewVenv venv params
+							  		end
+							  	in 
+							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body)), actual_ty(tenv, rt, pos))
+							  		then {venv = venv, tenv=tenv}
+							  		else (ErrorMsg.error pos ("Function return type and body type different"); 	{venv=venv, tenv=tenv})
+							  	end
+
+
+					  		|processFunDec( tenv, venv, {name, params, body, pos, result=NONE} ) = 
+
+					  			(* copy and pasted, change later? *)
+					  			let val newVenv = 
+						  			let fun putIntoNewVenv( {name, escape, typ, pos}, venv ) = Symbol.enter(venv, name, Env.VarEntry{ty= actual_ty(tenv, typ, pos)})
+							  			
+							  		in
+							  			foldl putIntoNewVenv venv params
+							  		end
+							  	in 
+							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body)), Types.UNIT)
+							  		then {venv = venv, tenv=tenv}
+							  		else (ErrorMsg.error pos ("Function return type and body type different"); 	{venv=venv, tenv=tenv})
+							  	end
+
+
+					  	fun addFunctionToVenv(venv, tenv, {name, params, body, pos, result=SOME(rt, posi)}) = 
+					  			let val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
+					  			in
+					  				{venv = Symbol.enter(venv, name, Env.FunEntry{formals = paramTys, result = actual_ty(tenv, rt, pos)}), tenv=tenv}
+					  			end
+
+					  	   |addFunctionToVenv(venv, tenv, {name, params, body, pos, result=NONE}) = 
+					  			let val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
+					  			in
+					  				{venv = Symbol.enter(venv, name, Env.FunEntry{formals = paramTys, result = Types.UNIT}), tenv=tenv}
+					  			end
+
+
+				  		fun initDecs (tenv, venv, []) = {venv=venv, tenv=tenv}
+				  		   |initDecs (tenv, venv, [fndec] ) =  addFunctionToVenv(venv, tenv, fndec)
+				  		   |initDecs (tenv, venv, fndec::rest ) = 
+				  		    	let val {venv=venv', tenv=tenv'} = addFunctionToVenv(venv, tenv, fndec)
+		   		  		   		in
+		   		  		   			initDecs(tenv', venv', rest)
+								end
+
+
+
+		   		  		fun enterDecs (tenv, venv, []) = {tenv=tenv, venv=venv}
+		   		  		   |enterDecs (tenv, venv, [fndec]) = processFunDec(tenv, venv, fndec)
+		   		  		   |enterDecs (tenv, venv, fndec::rest) = 
+		   		  		   		let val {venv=venv', tenv=tenv'} = processFunDec(tenv, venv, fndec) 
+		   		  		   		in
+		   		  		   			enterDecs(tenv', venv', rest)
+								end
+
+				  	in
+				  		let val {venv=venv', tenv=tenv'} = initDecs(tenv, venv, fundeclist)						
+						in 
+							enterDecs(tenv', venv', fundeclist)
+						end
+
+				  	end
+		   		  
 		   		
 
 		   	in foldl trdec {venv=venv, tenv=tenv} decs

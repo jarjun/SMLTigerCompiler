@@ -158,6 +158,7 @@ e.id2[3].id1 + 4
 end
 */
 
+/*
 let type a = array of int
 	type b = array of int
 
@@ -168,7 +169,7 @@ let type a = array of int
 	var bool := arr1 = arr2
 
 in end
-
+*/
 
 /*
 let 
@@ -179,4 +180,30 @@ in
 arr[0][0]
 end
 */
+
+
+
+
+
+let type a = int
+	type b = string
+	type c = array of a
+	type d = {first: a, second: b}
+	var outer := 6
+
+	function abc(nums:c, str:b, num3:a, rec:d):int =
+
+		outer
+
+in
+0
+end 
+
+
+
+
+
+
+
+
 

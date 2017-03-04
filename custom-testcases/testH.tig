@@ -307,12 +307,42 @@ in
 end
 */
 
-
+/*
 let var a:=5
 in
 	for a:= 1 to 6 do ();
 	for b:=0 to 10 do (while (break; a<10) do break; break)
 end
+*/
+/* 
+/* give error for second declaration of a and b's type */
+let type a = int
+	type b = a
+	type a = string
+	type c = a
 
+	var a:a := 5
+	var b:b := "str"
+	var c:c := 4
+in end
+*/
 
+/*
+/* error on redeclaration of a and the a(5) for arguments */
+let function a(p1:int, p2:string) = ()
+	function a(p3:int):int = 5
+in 
+a(5)
+end
+*/
 
+/*
+/*error for the second rec, doesn't throw field errors because it doesn't process it*/
+let type rec = {int:int}
+	type rec = {int:int, int:int}
+	var int:int := 1
+	var r := rec{int=int}
+in end
+*/
+
+0

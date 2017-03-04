@@ -77,6 +77,8 @@ struct
 	fun getArrayRef(Types.ARRAY(t, r), pos) = r
 	 	|getArrayRef(_, pos) = (ErrorMsg.error pos "Array not of array type"; ref ())
 
+	fun listContains(l, item:Symbol.symbol) = List.length(List.filter (fn x:Symbol.symbol => x=item) l) <> 0
+
 	fun transExp(venv, tenv, exp) = 
 		let fun 
 
@@ -316,14 +318,17 @@ struct
 				   		  		end
 
 		   		  		   |processTyDec (tenv, venv, {name, ty=A.RecordTy(fieldlist), pos}) = 
-		   		  		   		let fun addField ({name, escape, typ, pos}, running) = 
+		   		  		   		let fun addField ({name, escape, typ, pos}, (running,l)) = 
 		   		  		   			let val typAdd = Symbol.look(tenv, typ)
 		   		  		   				val typCheck = if isSome(typAdd) then valOf(typAdd) else (ErrorMsg.error pos ("type " ^ Symbol.name typ ^ " not declared"); Types.INT)
 		   		  		   			in
-		   		  		   				running @ [(name, typCheck)]
+		   		  		   				if listContains(l, name) 
+		   		  		   				then (ErrorMsg.error pos ("Record field " ^ Symbol.name(name) ^ " already declared"); (running, l)) 
+		   		  		   				else (running @ [(name, typCheck)], l @ [name])
 		   		  		   			end
 		   		  		   			val ourName = valOf(Symbol.look(tenv, name))
-		   		  		   			val recTyp = SOME(Types.RECORD((foldl addField [] fieldlist), ref ()))
+		   		  		   			val (fieldlist, namelist) = foldl addField ([],[]) fieldlist
+		   		  		   			val recTyp = SOME(Types.RECORD(fieldlist, ref ()))
 		   		  		   			fun updateRef (Types.NAME(name, otherRef), thingToUpdateTo) = ((otherRef := thingToUpdateTo); ())
 				   		  			   |updateRef (_) = ()
 		   		  		   		in 
@@ -344,12 +349,17 @@ struct
 		   		  		   		end
 
 
-		   		  		fun enterDecs (tenv, venv, []) = {tenv=tenv, venv=venv}
-		   		  		   |enterDecs (tenv, venv, [dec]) = processTyDec(tenv, venv, dec)
-		   		  		   |enterDecs (tenv, venv, (dec::rest)) = 
-		   		  		   		let val {venv=venv', tenv=tenv'} = processTyDec(tenv, venv, dec) 
+		   		  		fun enterDecs (tenv, venv, l, []) = {tenv=tenv, venv=venv}
+		   		  		   |enterDecs (tenv, venv, l, [dec]) = if listContains(l, #name(dec))
+						   									then (ErrorMsg.error (#pos(dec)) ("Can't redeclare type " ^ Symbol.name(#name(dec)) ^ " in type declaration block"); {tenv=tenv, venv=venv})
+						   									else processTyDec(tenv, venv, dec)
+
+		   		  		   |enterDecs (tenv, venv, l, (dec::rest)) = 
+		   		  		   		let val {venv=venv', tenv=tenv'} = if listContains(l, #name(dec)) 
+						   										   then (ErrorMsg.error (#pos(dec)) ("Can't redeclare type " ^ Symbol.name(#name(dec)) ^ " in type declaration block"); {tenv=tenv, venv=venv})
+						   										   else processTyDec(tenv, venv, dec) 
 		   		  		   		in
-		   		  		   			enterDecs(tenv', venv', rest)
+		   		  		   			enterDecs(tenv', venv', l @ [#name(dec)], rest)
 								end
 
 						fun initDecs (tenv, venv, []) = {tenv=tenv, venv=venv}
@@ -362,7 +372,7 @@ struct
 					in
 						let val {venv=venv', tenv=tenv'} = initDecs(tenv, venv, declist)						
 						in 
-							enterDecs(tenv', venv', declist)
+							enterDecs(tenv', venv', [], declist)
 						end
 					end
 		   		  
@@ -412,12 +422,16 @@ struct
 					  			end
 
 
-				  		fun initDecs (tenv, venv, []) = {venv=venv, tenv=tenv}
-				  		   |initDecs (tenv, venv, [fndec] ) =  addFunctionToVenv(venv, tenv, fndec)
-				  		   |initDecs (tenv, venv, fndec::rest ) = 
-				  		    	let val {venv=venv', tenv=tenv'} = addFunctionToVenv(venv, tenv, fndec)
+				  		fun initDecs (tenv, venv, l, []) = {venv=venv, tenv=tenv}
+				  		   |initDecs (tenv, venv, l, [fndec] ) = if listContains(l, #name(fndec))
+						   									  then (ErrorMsg.error (#pos(fndec)) ("Can't redeclare function " ^ Symbol.name(#name(fndec)) ^ " in function declaration block"); {tenv=tenv, venv=venv})
+						   									  else addFunctionToVenv(venv, tenv, fndec)
+				  		   |initDecs (tenv, venv, l, fndec::rest ) = 
+				  		    	let val {venv=venv', tenv=tenv'} = if listContains(l, #name(fndec)) 
+						   										   then (ErrorMsg.error (#pos(fndec)) ("Can't redeclare function " ^ Symbol.name(#name(fndec)) ^ " in function declaration block"); {tenv=tenv, venv=venv})
+						   										   else addFunctionToVenv(venv, tenv, fndec)
 		   		  		   		in
-		   		  		   			initDecs(tenv', venv', rest)
+		   		  		   			initDecs(tenv', venv', l @ [#name(fndec)], rest)
 								end
 
 
@@ -431,7 +445,7 @@ struct
 								end
 
 				  	in
-				  		let val {venv=venv', tenv=tenv'} = initDecs(tenv, venv, fundeclist)						
+				  		let val {venv=venv', tenv=tenv'} = initDecs(tenv, venv, [], fundeclist)						
 						in 
 							enterDecs(tenv', venv', fundeclist)
 						end

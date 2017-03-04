@@ -185,6 +185,19 @@ struct
 
 
 				|trexp (A.VarExp(var)) = trvar(var)
+				|trexp (A.CallExp{func, args, pos}) = 
+					let val Env.FunEntry{formals, result} = case Symbol.look(venv, func) of SOME(Env.FunEntry{formals, result}) => valOf(Symbol.look(venv, func))
+														 |SOME(Env.VarEntry{ty})			  => ((ErrorMsg.error pos "This is a variable, not a function"); Env.FunEntry{formals = [], result=Types.UNIT})
+														 |_ 							  => ((ErrorMsg.error pos "Undefined function"); Env.FunEntry{formals = [], result=Types.UNIT})
+
+						fun compareParams(formal, idx) = (if sameType(tenv, pos, resolve_type(tenv, formal, pos), resolve_type(tenv, (#ty(trexp(List.nth(args, idx)))), pos )) then () else ErrorMsg.error pos "parameter mismatch" ; idx+1)    	
+
+
+					in 
+						if List.length(formals) = List.length(args) then (foldl compareParams 0 formals) else (ErrorMsg.error pos "incorrect number of arguments"; 0);
+						{exp=(), ty=resolve_type(tenv, result, pos)} 
+					end
+
 
 				(* Primitives *)
 				|trexp(A.IntExp(num)) = {exp=(), ty=Types.INT}

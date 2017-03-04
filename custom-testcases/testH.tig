@@ -184,7 +184,7 @@ end
 
 
 
-
+/*
 let type a = int
 	type b = string
 	type c = array of a
@@ -221,8 +221,28 @@ let type a = int
 in
 0
 end 
+*/
 
+/*
+let type b = int
+	type arr = array of int
+	type rec = {a:int}
+	function test(a:int, b:string, c: arr):rec = 
+				 (b; rec{a=a + c[4]})
 
+	var testRec := test(1, "q", arr[1] of 4)
+in 
+	test(5, "h", arr[10] of 0)
+end
+*/
+
+/*
+let function fac1(a:int, b:int):int = fac1(b, a+b) + fac2(a, a-b)
+	function fac2(c:int, d:int):int = fac1(d, c+d) + fac2(-c, -d)
+in
+	fac1(0, 1)
+end
+*/
 
 
 

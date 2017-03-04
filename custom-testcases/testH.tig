@@ -243,17 +243,67 @@ in
 end
 */
 
-
+/*
 let function fac1(a:int, b:int):int = fac1(b, a+b) + fac2(a, a-b)
 	function fac2(c:int, d:int):int = fac1(d, c+d) + fac2(-c, -d)
 in
 	fac1(0, not(0)); substring("abc", 1, 1); print(substring(concat("a", "a"), 0, 1))
 end
+*/
+/*
+let 
+	var a := 10
+	var b := 5
+in
+for a:=0 to (b+a) do for b:=0 to a do (a+b;())
+end
+*/
+/*
+let 
+	type a = string
+in
+	let type a = int
+	var v:a := 6
+	in end
+
+end
+*/
+
+/* TODO: record cannot have parameters with identical names */
+/*
+let
+	type a = {id1:int, id1:int}
+	var rec := a{id1=5, id1=10}   
+in end
+*/
+
+/*
+let
+	var a := 5
+in while let var a:=1 in end do for a:=0 to 20 do ()
+end
+*/
+
+/*
+let var a := 5
+	type b = {}
+in
+	if a<10 then if (a=10) then "abc" else "string"
+end
+*/
+
+let type rec = {a:int}
+	type r = {l: arr}
+	type arr = array of rec
+	var b := r{l = arr[10] of rec{a=8} }
+	var c := ()
 
 
+in
+	c:= c := for a:=0 to 5 do (7;  (c:=())  );
 
-
-
+	b.l[0].a := 0
+end
 
 
 

@@ -198,15 +198,46 @@ struct
 						{exp=(), ty=resolve_type(tenv, result, pos)} 
 					end
 
+				|trexp (A.ForExp{var, escape, lo, hi, body, pos}) = 
+					(checkInt(trexp lo, pos);
+					checkInt(trexp hi, pos);
+					let val newVenv = Symbol.enter(venv, var, Env.VarEntry{ty=Types.INT})
+					in
+						if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body)), Types.UNIT)
+						then {exp=(), ty=Types.UNIT}
+						else (ErrorMsg.error pos "for loop body must return unit"; {exp=(), ty=Types.INT})
+					end)
+
+				|trexp (A.WhileExp{test, body, pos}) =
+					(checkInt(trexp test, pos);
+					if sameType(tenv, pos, #ty(transExp(venv, tenv, body)), Types.UNIT)
+					then {exp=(), ty=Types.UNIT}
+					else (ErrorMsg.error pos "while loop body must return unit"; {exp=(), ty=Types.INT}))
+
+				|trexp (A.IfExp{test, then', else', pos}) = 
+					(checkInt(trexp test, pos);
+					if isSome(else')
+					then 
+						if sameType(tenv, pos, resolve_type(tenv, #ty(trexp then'), pos), resolve_type(tenv, #ty(trexp (valOf(else'))), pos))
+						then ()
+						else ErrorMsg.error pos "branches don't have matching return type"
+					else ();
+					{exp=(), ty=resolve_type(tenv, #ty(trexp then'), pos)})
+
+				|trexp (A.AssignExp{var, exp, pos}) = 
+					(if sameType(tenv, pos, resolve_type(tenv, #ty(trvar(var)), pos), resolve_type(tenv, #ty(trexp exp), pos))
+					then ()
+					else ErrorMsg.error pos "variable and assigned expression don't have same type";
+					{exp=(), ty=Types.UNIT})
+
+				|trexp (A.BreakExp(pos)) = {exp=(), ty=Types.UNIT}
+
 
 				(* Primitives *)
 				|trexp(A.IntExp(num)) = {exp=(), ty=Types.INT}
 				|trexp(A.StringExp(str)) = {exp=(), ty=Types.STRING}
 				|trexp(A.NilExp) = {exp=(), ty=Types.NIL} 
-
-
-			    |trexp (_) = (ErrorMsg.error 0 "unknown expression"; {exp=(), ty=Types.INT}) (* default *)
-
+				
 
 			 and trvar (A.SimpleVar(id, pos)) = (* nonexhaustive *)
 			 	   (case Symbol.look(venv, id) 

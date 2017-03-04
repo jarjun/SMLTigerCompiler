@@ -26,5 +26,20 @@ struct
 					end
 
 	val base_venv = let val emptyMap:(enventry Symbol.table) = Symbol.empty
-					in emptyMap end
+						val defaultTypeList = [ (Symbol.symbol("print"), FunEntry{formals=[Types.STRING], result=Types.UNIT}),
+												(Symbol.symbol("flush"), FunEntry{formals=[], result=Types.UNIT}),
+												(Symbol.symbol("getchar"), FunEntry{formals=[], result=Types.STRING}),
+												(Symbol.symbol("ord"), FunEntry{formals=[Types.STRING], result=Types.INT}),
+												(Symbol.symbol("chr"), FunEntry{formals=[Types.INT], result=Types.STRING}),
+												(Symbol.symbol("size"), FunEntry{formals=[Types.STRING], result=Types.INT}),
+												(Symbol.symbol("substring"), FunEntry{formals=[Types.STRING, Types.INT, Types.INT], result=Types.STRING}),
+												(Symbol.symbol("concat"), FunEntry{formals=[Types.STRING, Types.STRING], result=Types.STRING}),
+												(Symbol.symbol("not"), FunEntry{formals=[Types.INT], result=Types.INT}),
+												(Symbol.symbol("exit"), FunEntry{formals=[Types.INT], result=Types.UNIT})
+											  ]
+						fun helper ( (symb, typ) , running) = Symbol.enter(running, symb, typ)
+
+					in
+						foldl helper emptyMap defaultTypeList
+					end
 end

@@ -195,6 +195,13 @@ let type a = int
 	type intlist = {hd: int, t1: intlist}
 	var second := intlist{hd = 2, t1 = nil}
 	var first := intlist{hd = 1, t1 = second}
+
+
+	var root:tree  := tree{key=1, children=nil}
+	var a:treelist := treelist{hd=root, t1=nil}
+	var b:treelist := treelist{hd=root, t1=a}
+
+
 	*/
 
 
@@ -236,13 +243,13 @@ in
 end
 */
 
-/*
+
 let function fac1(a:int, b:int):int = fac1(b, a+b) + fac2(a, a-b)
 	function fac2(c:int, d:int):int = fac1(d, c+d) + fac2(-c, -d)
 in
-	fac1(0, 1)
+	fac1(0, not(0)); substring("abc", 1, 1); print(substring(concat("a", "a"), 0, 1))
 end
-*/
+
 
 
 

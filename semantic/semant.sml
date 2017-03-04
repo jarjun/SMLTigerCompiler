@@ -62,6 +62,11 @@ struct
 	fun sameType(tenv, pos, Types.ARRAY(typ1, refr1), Types.ARRAY(typ2, refr2)) = 
 	 		(refr1 = refr2) andalso (sameType(tenv, pos, resolve_type(tenv, typ1, pos), resolve_type(tenv, typ2, pos))) (*might not the andalso part*)
 	 	|sameType(tenv, pos, Types.RECORD(typ1, refr1), Types.RECORD(typ2, refr2)) = refr1 = refr2
+
+
+	 	|sameType(tenv, pos, Types.RECORD(typ1, refr1), Types.NIL) = true
+	 	|sameType(tenv, pos, Types.NIL, Types.RECORD(typ2, refr2)) = true
+
 	    |sameType(tenv, pos, type1:ty, type2:ty) = (resolve_type(tenv, type1, pos) = resolve_type(tenv, type2, pos)) (*TODO: actually deal with types here: records?*)
 
 	fun getArrayType(Types.ARRAY(t, r), pos) = t
@@ -149,15 +154,22 @@ struct
 					{exp=(), ty = actual_ty(tenv, typ, pos)})
 
 				|trexp(A.RecordExp{fields=f, typ=typ, pos=pos}) = 
-					(let val Types.NAME(s, r) = if isSome(Symbol.look(tenv, typ)) then  valOf(Symbol.look(tenv, typ)) else (ErrorMsg.error pos "Undefined record type"; Types.NAME(typ, ref NONE)) (*TODO: clean this up*)
-						 val arrRes = if isSome(!r) then !r else (ErrorMsg.error pos "Not a record type"; NONE)
+					(let val symType = if isSome(Symbol.look(tenv, typ)) then  valOf(Symbol.look(tenv, typ)) else (ErrorMsg.error pos "Undefined record type"; Types.NAME(typ, ref NONE)) (*TODO: clean this up*)
+						 
+
+						val Types.NAME(s, r) = case symType of Types.NAME(a,b)  => symType
+															   |Types.INT        => Types.NAME(Symbol.symbol(""), ref NONE) (* will throw error on its own later *)
+															   |Types.STRING     => Types.NAME(Symbol.symbol(""), ref NONE)
+															   |_                => (ErrorMsg.error pos "This should never happen in record exp"; Types.NAME(Symbol.symbol(""), ref NONE))
+
+						 val arrRes = if isSome(!r) then resolve_type(tenv, valOf(!r), pos) else (ErrorMsg.error pos "Not a record type"; Types.INT)
 						 fun compareFields([], []) = ()
 						 	|compareFields([], expectedList) = ErrorMsg.error pos "Not all record parameters defined"
 						 	|compareFields(fieldlist, []) = ErrorMsg.error pos "Too many record parameters defined"
 						 	|compareFields(((sym, exp, pos)::rest), expectedList) = 
 							 	let val item = List.filter (fn (s, t) => Symbol.name(s) = Symbol.name(sym)) expectedList
 							 	in 
-							 		case item of [(s, t)] => (if sameType(tenv, pos, #ty(trexp(exp)), t) then () else ErrorMsg.error pos "Record parameter type mismatch"; compareFields(rest, 
+							 		case item of [(s, t)] => (if sameType(tenv, pos, #ty(trexp(exp)), resolve_type(tenv, t, pos)) then () else ErrorMsg.error pos ("Record parameter type mismatch " ^ typeToString(#ty(trexp(exp))) ^ " and " ^ typeToString(t) ); compareFields(rest, 
 							 			                                                            List.filter (fn (s, t) => Symbol.name(s) <> Symbol.name(sym)) expectedList))
 							 			        |[]       => ErrorMsg.error pos ("Paramter error for " ^ Symbol.name(sym))
 							 			        |_        => ErrorMsg.error pos "Record parameter matches multiple fields" (*this should never happen*)
@@ -165,7 +177,7 @@ struct
 							 	end
 
 					in 
-						case arrRes of SOME(Types.RECORD(symlist, uniq)) => compareFields(f, symlist)
+						case arrRes of Types.RECORD(symlist, uniq) => compareFields(f, symlist)
 							       |_                   => ErrorMsg.error pos "Undefined record type"; 
 						{exp=(), ty = actual_ty(tenv, typ, pos)}
 					end

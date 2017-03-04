@@ -191,6 +191,29 @@ let type a = int
 	type d = {first: a, second: b}
 	var outer := 6
 
+	/*
+	type intlist = {hd: int, t1: intlist}
+	var second := intlist{hd = 2, t1 = nil}
+	var first := intlist{hd = 1, t1 = second}
+	*/
+
+
+	type q = r
+	type r = {a:int}
+	
+	var abc := q{a=4}
+
+
+	/*var lplp := mnzxcvb{a=1} /* produces 4 error messages! */ */
+
+
+
+
+	type tree = {key:int, children: treelist}
+	type treelist = {hd:tree, t1:treelist}
+
+	
+
 	function abc(nums:c, str:b, num3:a, rec:d):int =
 
 		outer

@@ -345,4 +345,9 @@ let type rec = {int:int}
 in end
 */
 
-0
+let type a = b
+	type b = c
+	type c = a
+	var a:a := 3
+	var b:b := 4
+in end

@@ -79,6 +79,13 @@ struct
 
 	fun listContains(l, item:Symbol.symbol) = List.length(List.filter (fn x:Symbol.symbol => x=item) l) <> 0
 
+	fun isCycle(tenv, sym, l) = case Symbol.look(tenv, sym) of SOME(Types.NAME(_, t)) => (case !t of SOME(Types.NAME(s, _)) => if listContains(l,s) 
+																					     									 then true 
+																						 									 else isCycle(tenv, s, l @ [sym])
+																						 		   |_ 					    => false)
+										  					  |SOME(_)				  => false
+										  					  |NONE 				  => false
+
 	fun transExp(venv, tenv, exp) = 
 		let fun 
 
@@ -314,6 +321,9 @@ struct
 				   		  						 else ((ErrorMsg.error tyPos ("type " ^ Symbol.name typ ^ " not declared")); NONE))
 				   		  		in
 				   		  			updateRef(ourName, toRef);
+				   		  			if isCycle(tenv, name, []) 
+				   		  			then (ErrorMsg.error pos "Cyclic types are not valid"; updateRef(ourName, NONE))
+				   		  			else ();
 				   		  			{tenv=tenv, venv=venv}
 				   		  		end
 

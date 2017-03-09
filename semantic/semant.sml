@@ -58,6 +58,7 @@ struct
 	   |checkEqualComparable ({exp=expL,ty=Types.ARRAY(_, refr1)}, {exp=expR,ty=Types.ARRAY(_,refr2)}, pos) = if refr1 = refr2 then () else (ErrorMsg.error pos "error: matching array types required for equality check";())
 	   |checkEqualComparable ({exp=expL,ty=Types.RECORD _}, {exp=expR,ty=Types.NIL}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=Types.NIL}, {exp=expR,ty=Types.RECORD _}, pos) = ()
+	   |checkEqualComparable ({exp=expL,ty=Types.NIL}, {exp=expR,ty=Types.NIL}, pos) = ()
 	   |checkEqualComparable ({exp=expL,ty=_}, {exp=expR,ty=_}, pos) = ErrorMsg.error pos "error: matching types required for equality check";
 
 	 (* not checking refs sameType *)
@@ -231,11 +232,18 @@ struct
 					(checkInt(trexp test, pos);
 					if isSome(else')
 					then 
-						if sameType(tenv, pos, resolve_type(tenv, #ty(trexp then'), pos), resolve_type(tenv, #ty(trexp (valOf(else'))), pos))
+						(if sameType(tenv, pos, resolve_type(tenv, #ty(trexp then'), pos), resolve_type(tenv, #ty(trexp (valOf(else'))), pos))
 						then ()
-						else ErrorMsg.error pos "error: branches don't have matching return type"
-					else ();
-					{exp=(), ty=resolve_type(tenv, #ty(trexp then'), pos)})
+						else ErrorMsg.error pos "error: branches don't have matching return type";
+						{exp=(), ty=resolve_type(tenv, #ty(trexp then'), pos)})
+					else 
+						(if sameType(tenv, pos, resolve_type(tenv, #ty(trexp then'), pos), Types.UNIT)
+						then ()
+						else ErrorMsg.error pos "error: then clause must evaluate to UNIT";
+						{exp=(), ty=Types.UNIT})
+					)
+
+
 
 				|trexp (A.AssignExp{var, exp, pos}) = 
 					(if sameType(tenv, pos, resolve_type(tenv, #ty(trvar(var)), pos), resolve_type(tenv, #ty(trexp exp), pos))
@@ -297,7 +305,9 @@ struct
 		   let fun trdec (A.VarDec{name, typ=NONE, init, escape, pos}, {venv, tenv}) = 
 		   			let val {exp, ty=typ} = transExp(venv, tenv, init)
 		   		
-		   			in {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})}
+		   			in if typ = Types.NIL 
+					   then (ErrorMsg.error pos "error: must specify record type to assign variable to nil"; {tenv=tenv, venv=venv})
+					   else {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})}
 		   			end
 
 		   		  |trdec (A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv}) =

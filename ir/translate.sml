@@ -21,6 +21,8 @@ structure Translate : TRANSLATE = struct
 
 	val outermost = OUTER( {uniq=  ref ()} )
 
+	fun newLevel {parent, name, formals} = NORMAL({  parent = parent,  frame=Frame.newFrame{name=name, formals= true::formals}, uniq = ref () })
+
 	fun formals (NORMAL({parent, frame, uniq}) : level) = (map 
 														  (fn x => (  NORMAL({parent=parent, frame=frame, uniq=uniq}):level   , x:Frame.access ):access )   
 														  (Frame.formals(frame))   )
@@ -31,7 +33,7 @@ structure Translate : TRANSLATE = struct
 (*	   |allocLocal (OUTER({uniq}):level)                   (esc) = ( (ErrorMsg.error ~1 "Can't alloc variables in outermost level. How did this happen?"); (OUTER({uniq=uniq}), Frame.InFrame(0))  )  *)
 
 
-	fun newLevel {parent, name, formals} = NORMAL({  parent = parent,  frame=Frame.newFrame{name=name, formals=formals}, uniq = ref () })
+	
 
 
 

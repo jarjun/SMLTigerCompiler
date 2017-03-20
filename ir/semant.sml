@@ -89,7 +89,7 @@ struct
 										  					  |SOME(_)				  => false
 										  					  |NONE 				  => false
 
-	fun transExp(venv, tenv, exp) = 
+	fun transExp(venv, tenv, exp, level) = 
 		let fun 
 
 				(* Normal arithmetic, two ints needed *)
@@ -145,8 +145,8 @@ struct
 				(* others *)
 				|trexp (A.LetExp{decs, body, pos}) =
 				    let val {venv=venv', tenv=tenv'} = 
-				  		transDecs(venv, tenv, decs)
-				  	in 	transExp(venv', tenv', body)
+				  		transDecs(venv, tenv, decs, level)
+				  	in 	transExp(venv', tenv', body, level)
 				  	end
 
 				|trexp (A.SeqExp (explist)) =
@@ -200,9 +200,9 @@ struct
 
 				|trexp (A.VarExp(var)) = trvar(var)
 				|trexp (A.CallExp{func, args, pos}) = 
-					let val Env.FunEntry{formals, result} = case Symbol.look(venv, func) of SOME(Env.FunEntry{formals, result}) => valOf(Symbol.look(venv, func))
-														 |SOME(Env.VarEntry{ty})			  => ((ErrorMsg.error pos "error: this is a variable, not a function"); Env.FunEntry{formals = [], result=Types.UNIT})
-														 |_ 							  => ((ErrorMsg.error pos "error: undefined function"); Env.FunEntry{formals = [], result=Types.UNIT})
+					let val Env.FunEntry{level, label, formals, result} = case Symbol.look(venv, func) of SOME(Env.FunEntry{level, label, formals, result}) => valOf(Symbol.look(venv, func))
+														 |SOME(Env.VarEntry{access, ty})			  => ((ErrorMsg.error pos "error: this is a variable, not a function"); Env.FunEntry{level=level, label=Temp.newlabel(), formals = [], result=Types.UNIT})
+														 |_ 							  => ((ErrorMsg.error pos "error: undefined function"); Env.FunEntry{level=level, label=Temp.newlabel(), formals = [], result=Types.UNIT})
 
 						fun compareParams(formal, idx) = (if sameType(tenv, pos, resolve_type(tenv, formal, pos), resolve_type(tenv, (#ty(trexp(List.nth(args, idx)))), pos )) then () else ErrorMsg.error pos "error: parameter mismatch" ; idx+1)    	
 
@@ -216,9 +216,9 @@ struct
 					(checkInt(trexp lo, pos);
 					checkInt(trexp hi, pos);
 					loopDepth := !loopDepth+1;
-					let val newVenv = Symbol.enter(venv, var, Env.VarEntry{ty=Types.INT})
+					let val newVenv = Symbol.enter(venv, var, Env.VarEntry{access=T.allocLocal(level)(!escape), ty=Types.INT})
 					in
-						if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body)), Types.UNIT)
+						if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, level)), Types.UNIT)
 						then (loopDepth := !loopDepth-1; {exp=(), ty=Types.UNIT})
 						else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: for loop body must return unit"; {exp=(), ty=Types.INT})
 					end)
@@ -226,7 +226,7 @@ struct
 				|trexp (A.WhileExp{test, body, pos}) =
 					(checkInt(trexp test, pos);
 					loopDepth := !loopDepth+1;
-					if sameType(tenv, pos, #ty(transExp(venv, tenv, body)), Types.UNIT)
+					if sameType(tenv, pos, #ty(transExp(venv, tenv, body, level)), Types.UNIT)
 					then (loopDepth := !loopDepth-1; {exp=(), ty=Types.UNIT})
 					else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: while loop body must return unit"; {exp=(), ty=Types.INT}))
 
@@ -269,7 +269,7 @@ struct
 
 			 and trvar (A.SimpleVar(id, pos)) = (* nonexhaustive *)
 			 	   (case Symbol.look(venv, id) 
-			 	   	of SOME(Env.VarEntry{ty}) => {exp=(), ty=resolve_type(tenv,ty,pos)}  (* TODO: deal w/ actual_ty *)
+			 	   	of SOME(Env.VarEntry{access, ty}) => {exp=(), ty=resolve_type(tenv,ty,pos)}  (* TODO: deal w/ actual_ty *)
 			 	   	 | SOME(Env.FunEntry{...}) => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=(), ty=Types.INT})
 			 	   	 | NONE                 => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=(), ty=Types.INT}))
 
@@ -301,23 +301,23 @@ struct
 
 		in trexp(exp) end
 
-	and transDecs(venv, tenv, []) = {venv=venv, tenv=tenv}
-		   |transDecs(venv, tenv, decs) = 
+	and transDecs(venv, tenv, [], level) = {venv=venv, tenv=tenv}
+	   |transDecs(venv, tenv, decs, level) = 
 
 		   let fun trdec (A.VarDec{name, typ=NONE, init, escape, pos}, {venv, tenv}) = 
-		   			let val {exp, ty=typ} = transExp(venv, tenv, init)
+		   			let val {exp, ty=typ} = transExp(venv, tenv, init, level)
 		   		
 		   			in if typ = Types.NIL 
 					   then (ErrorMsg.error pos "error: must specify record type to assign variable to nil"; {tenv=tenv, venv=venv})
-					   else {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})}
+					   else {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=T.allocLocal(level)(!escape), ty=typ})}
 		   			end
 
 		   		  |trdec (A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv}) =
-		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init)
+		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init, level)
 		   		
 		   			in 
 		   				if sameType(tenv, pos, actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
-		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {ty=typ})} 
+		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=T.allocLocal(level)(!escape), ty=typ})} 
 		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv}) (* TODO not adding to symbol table? *)
 		   			end 
 
@@ -401,15 +401,19 @@ struct
 
 				  |trdec(A.FunctionDec(fundeclist), {venv, tenv}) = 
 				  	let fun processFunDec( tenv, venv, {name, params, body, pos, result=SOME(rt, posi)} ) = 
-
+				  				
 						  		let val newVenv = 
-						  			let fun putIntoNewVenv( {name, escape, typ, pos}, venv ) = Symbol.enter(venv, name, Env.VarEntry{ty= actual_ty(tenv, typ, pos)})
+						  			let fun putIntoNewVenv( {name, escape, typ, pos}, venv ) = Symbol.enter(venv, name, Env.VarEntry{access=T.allocLocal(level)(true), ty= actual_ty(tenv, typ, pos)}) (* assume all parameters escape *)
 							  			
 							  		in
 							  			foldl putIntoNewVenv venv params
 							  		end
+
+							  		val symbolTableEntry = Symbol.look(venv, name)
+							  		val newLevelFromVenv = case symbolTableEntry of SOME(Env.FunEntry{level, label, formals, result}) => level
+							  													   |_ => (ErrorMsg.error ~1 "Function not in venv on second pass?"; T.outermost)
 							  	in 
-							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body)), actual_ty(tenv, rt, pos))
+							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, newLevelFromVenv)), actual_ty(tenv, rt, pos)) (* need new level here *)
 							  		then {venv = venv, tenv=tenv}
 							  		else (ErrorMsg.error pos ("error: function return type and body type different"); 	{venv=venv, tenv=tenv})
 							  	end
@@ -419,28 +423,34 @@ struct
 
 					  			(* copy and pasted, change later? *)
 					  			let val newVenv = 
-						  			let fun putIntoNewVenv( {name, escape, typ, pos}, venv ) = Symbol.enter(venv, name, Env.VarEntry{ty= actual_ty(tenv, typ, pos)})
+						  			let fun putIntoNewVenv( {name, escape, typ, pos}, venv ) = Symbol.enter(venv, name, Env.VarEntry{access=T.allocLocal(level)(true), ty= actual_ty(tenv, typ, pos)})
 							  			
 							  		in
 							  			foldl putIntoNewVenv venv params
 							  		end
+
+							  		val symbolTableEntry = Symbol.look(venv, name)
+							  		val newLevelFromVenv = case symbolTableEntry of SOME(Env.FunEntry{level, label, formals, result}) => level
+							  													   |_ => (ErrorMsg.error ~1 "Function not in venv on second pass?"; T.outermost)
 							  	in 
-							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body)), Types.UNIT)
+							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, newLevelFromVenv)), Types.UNIT) (* need new level here *)
 							  		then {venv = venv, tenv=tenv}
 							  		else (ErrorMsg.error pos ("error: function return type and body type different"); 	{venv=venv, tenv=tenv})
 							  	end
 
 
 					  	fun addFunctionToVenv(venv, tenv, {name, params, body, pos, result=SOME(rt, posi)}) = 
-					  			let val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
+					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) (* TODO all params are true now *)
+					  				val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
 					  			in
-					  				{venv = Symbol.enter(venv, name, Env.FunEntry{formals = paramTys, result = actual_ty(tenv, rt, pos)}), tenv=tenv}
+					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = actual_ty(tenv, rt, pos)}), tenv=tenv}
 					  			end
 
 					  	   |addFunctionToVenv(venv, tenv, {name, params, body, pos, result=NONE}) = 
-					  			let val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
+					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) (* TODO all params are true now *)
+					  				val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
 					  			in
-					  				{venv = Symbol.enter(venv, name, Env.FunEntry{formals = paramTys, result = Types.UNIT}), tenv=tenv}
+					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = Types.UNIT}), tenv=tenv}
 					  			end
 
 
@@ -479,7 +489,8 @@ struct
 		   	in foldl trdec {venv=venv, tenv=tenv} decs
 		   	end
 
-	fun transProg(expr) = let val final = transExp(Env.base_venv, Env.base_tenv, expr)
+	fun transProg(expr) = let val curLevel = T.newLevel({parent=T.outermost, name=Temp.newlabel(), formals=[]})
+							  val final = transExp(Env.base_venv, Env.base_tenv, expr, curLevel)
 						  in () end
 
 end

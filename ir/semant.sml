@@ -1,5 +1,6 @@
 structure A = Absyn
-structure Frame = MipsFrame
+(* structure Frame = MipsFrame *)
+structure T = Translate
 
 signature SEMANT = 
 sig

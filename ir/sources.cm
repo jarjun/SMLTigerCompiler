@@ -13,6 +13,13 @@ semant.sml
 main.sml
 env.sml
 types.sml
+frame.sig
+mipsframe.sml
+tree.sml
+temp.sig
+temp.sml
+printtree.sml
+translate.sml
 $/smlnj-lib.cm
 $/ml-yacc-lib.cm
 $/basis.cm

@@ -30,4 +30,12 @@ structure MipsFrame : FRAME = struct
 		end
 
 
+	fun printFrame {name, formals, numFrameLocals} = (print(Symbol.name(name)); 
+													map (fn x => case x of InFrame(num) => print(" InFrame(" ^ Int.toString(num) ^ ") ")
+																	      |InReg(temp) => print (" InReg(" ^ Int.toString(temp) ^ ") ")) formals;
+													print (Int.toString(!numFrameLocals));
+													print ("\n")	)
+	fun printAccess (InFrame(num)) = print(" InFrame(" ^ Int.toString(num) ^ ") \n")
+	   |printAccess (InReg(temp)) = print (" InReg(" ^ Int.toString(temp) ^ ") \n")
+
 end

@@ -21,6 +21,7 @@ sig
 				   |STRING of Temp.label * string
 
 	*)
-
-
+	val printFrame : frame -> unit
+	val printAccess : access -> unit
+	
 end

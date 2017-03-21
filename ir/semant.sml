@@ -402,16 +402,17 @@ struct
 				  |trdec(A.FunctionDec(fundeclist), {venv, tenv}) = 
 				  	let fun processFunDec( tenv, venv, {name, params, body, pos, result=SOME(rt, posi)} ) = 
 				  				
-						  		let val newVenv = 
-						  			let fun putIntoNewVenv( {name, escape, typ, pos}, venv ) = Symbol.enter(venv, name, Env.VarEntry{access=T.allocLocal(level)(true), ty= actual_ty(tenv, typ, pos)}) (* assume all parameters escape *)
+						  		let val symbolTableEntry = Symbol.look(venv, name)
+							  		val newLevelFromVenv = case symbolTableEntry of SOME(Env.FunEntry{level, label, formals, result}) => level
+							  												   |_ => (ErrorMsg.error ~1 "Function not in venv on second pass?"; T.outermost)
+								  	val (stat::forms) = T.formals(newLevelFromVenv)
+							  		val combined = ListPair.zip(forms, params)
+						  			val newVenv = 
+						  			let fun putIntoNewVenv( (acc , {name, escape, typ, pos}), venv ) = ((*T.printAccess(acc);*) Symbol.enter(venv, name, Env.VarEntry{access=acc, ty= actual_ty(tenv, typ, pos)}))
 							  			
 							  		in
-							  			foldl putIntoNewVenv venv params
+							  			foldl putIntoNewVenv venv combined
 							  		end
-
-							  		val symbolTableEntry = Symbol.look(venv, name)
-							  		val newLevelFromVenv = case symbolTableEntry of SOME(Env.FunEntry{level, label, formals, result}) => level
-							  													   |_ => (ErrorMsg.error ~1 "Function not in venv on second pass?"; T.outermost)
 							  	in 
 							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, newLevelFromVenv)), actual_ty(tenv, rt, pos)) (* need new level here *)
 							  		then {venv = venv, tenv=tenv}
@@ -422,16 +423,17 @@ struct
 					  		|processFunDec( tenv, venv, {name, params, body, pos, result=NONE} ) = 
 
 					  			(* copy and pasted, change later? *)
-					  			let val newVenv = 
-						  			let fun putIntoNewVenv( {name, escape, typ, pos}, venv ) = Symbol.enter(venv, name, Env.VarEntry{access=T.allocLocal(level)(true), ty= actual_ty(tenv, typ, pos)})
-							  			
-							  		in
-							  			foldl putIntoNewVenv venv params
-							  		end
-
-							  		val symbolTableEntry = Symbol.look(venv, name)
+					  			let val symbolTableEntry = Symbol.look(venv, name)
 							  		val newLevelFromVenv = case symbolTableEntry of SOME(Env.FunEntry{level, label, formals, result}) => level
 							  													   |_ => (ErrorMsg.error ~1 "Function not in venv on second pass?"; T.outermost)
+							  		val (stat::forms) = T.formals(newLevelFromVenv)
+							  		val combined = ListPair.zip(forms, params)
+					  				val newVenv = 
+						  			let fun putIntoNewVenv( (acc , {name, escape, typ, pos}), venv ) = ((*T.printAccess(acc);*) Symbol.enter(venv, name, Env.VarEntry{access=acc, ty= actual_ty(tenv, typ, pos)}))
+							  			
+							  		in
+							  			foldl putIntoNewVenv venv combined
+							  		end
 							  	in 
 							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, newLevelFromVenv)), Types.UNIT) (* need new level here *)
 							  		then {venv = venv, tenv=tenv}

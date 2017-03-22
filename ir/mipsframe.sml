@@ -4,6 +4,7 @@ structure MipsFrame : FRAME = struct
 	val RV = Temp.newtemp()
 	val FP = Temp.newtemp()
 	val wordSize = 4
+	val numArgRegs = 4
 
 	(* TODO view shift instrs?? *)
 
@@ -31,8 +32,11 @@ structure MipsFrame : FRAME = struct
 
 	fun newFrame {name, formals} = 
 		let val formalsOnStack = ref 0
+			val regsUsed = ref 0
 			fun processBool true = ( formalsOnStack := !formalsOnStack + 1; InFrame( ~1 * !formalsOnStack * wordSize ) )
-			   |processBool false = InReg(Temp.newtemp())
+			   |processBool false = if !regsUsed < numArgRegs 
+			   						then (regsUsed := !regsUsed +1; InReg(Temp.newtemp())) 
+			   						else processBool true
 
 		in 
 			{name = name, formals = (map processBool formals), numFrameLocals = formalsOnStack}

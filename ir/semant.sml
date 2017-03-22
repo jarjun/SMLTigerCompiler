@@ -1,6 +1,7 @@
 structure A = Absyn
 (* structure Frame = MipsFrame *)
 structure T = Translate
+structure FE = FindEscape
 
 signature SEMANT = 
 sig
@@ -492,6 +493,7 @@ struct
 		   	end
 
 	fun transProg(expr) = let val curLevel = T.newLevel({parent=T.outermost, name=Temp.newlabel(), formals=[]})
+							  val _ = FE.findEscape(expr)
 							  val final = transExp(Env.base_venv, Env.base_tenv, expr, curLevel)
 						  in () end
 

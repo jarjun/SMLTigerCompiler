@@ -31,7 +31,7 @@ structure Translate : TRANSLATE = struct
 	fun newLevel {parent, name, formals} = 
 		let val newLev = NORMAL({  parent = parent,  frame=Frame.newFrame{name=name, formals= true::formals}, uniq = ref () })
 		in
-			(*printLevel(newLev);*)
+			printLevel(newLev);
 			newLev
 		end
 
@@ -45,8 +45,8 @@ structure Translate : TRANSLATE = struct
 		let	val newAccess = Frame.allocLocal(frame)(esc)
 			val ret = ( (NORMAL({parent=parent, frame=frame, uniq=uniq}) : level), newAccess )
 		in 
-(*			Frame.printAccess(newAccess);
-			printLevel((NORMAL({parent=parent, frame=frame, uniq=uniq})));*)
+			Frame.printAccess(newAccess);
+			printLevel((NORMAL({parent=parent, frame=frame, uniq=uniq})));
 			ret
 		end
 (*	   |allocLocal (OUTER({uniq}):level)                   (esc) = ( (ErrorMsg.error ~1 "Can't alloc variables in outermost level. How did this happen?"); (OUTER({uniq=uniq}), Frame.InFrame(0))  )  *)

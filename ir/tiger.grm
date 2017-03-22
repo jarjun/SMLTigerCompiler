@@ -68,7 +68,7 @@ exp: LET decs IN expseq END                (A.LetExp( {decs=decs, body=A.SeqExp(
    | arrayCreate                           (arrayCreate)
    | lvalue ASSIGN exp                     (A.AssignExp( {var=lvalue, exp=exp, pos=lvalueleft} ))
    | WHILE exp DO exp                      (A.WhileExp( {test=exp1, body=exp2, pos=WHILEleft} ))
-   | FOR ID ASSIGN exp TO exp DO exp       (A.ForExp( {var=Symbol.symbol(ID), escape=ref true, lo=exp1, hi=exp2, body=exp3, pos=FORleft} ))
+   | FOR ID ASSIGN exp TO exp DO exp       (A.ForExp( {var=Symbol.symbol(ID), escape=ref false, lo=exp1, hi=exp2, body=exp3, pos=FORleft} ))
    | BREAK                                 (A.BreakExp(BREAKleft))
    
 expseq: exp                                ([ (exp, expleft) ])
@@ -115,8 +115,8 @@ dec:  varDec                               (varDec)
    |  funDecs                              (A.FunctionDec(funDecs))
    |  tyDecs                               (A.TypeDec(tyDecs))
 
-varDec:  VAR ID ASSIGN exp                 (A.VarDec( {name=Symbol.symbol(ID), escape=ref true, typ=NONE, init=exp, pos=VARleft} ))
-      |  VAR ID COLON typeid ASSIGN exp    (A.VarDec( {name=Symbol.symbol(ID), escape=ref true, typ= SOME( (typeid, typeidleft) ), init=exp, pos=VARleft} ))
+varDec:  VAR ID ASSIGN exp                 (A.VarDec( {name=Symbol.symbol(ID), escape=ref false, typ=NONE, init=exp, pos=VARleft} ))
+      |  VAR ID COLON typeid ASSIGN exp    (A.VarDec( {name=Symbol.symbol(ID), escape=ref false, typ= SOME( (typeid, typeidleft) ), init=exp, pos=VARleft} ))
 
 tyDec: TYPE typeid EQ ty                   ( {name=typeid, ty=ty, pos=TYPEleft} )
 
@@ -128,8 +128,8 @@ ty: typeid                                 (A.NameTy(typeid, typeidleft))
   | LBRACE RBRACE                          (A.RecordTy([]))
   | ARRAY OF typeid                        (A.ArrayTy(typeid, ARRAYleft))
 
-tyfields: ID COLON typeid                  ( [{name=Symbol.symbol(ID), escape=ref true, typ=typeid, pos=IDleft}:A.field] )
-        | ID COLON typeid COMMA tyfields   ( ({name=Symbol.symbol(ID), escape=ref true, typ=typeid, pos=IDleft}:A.field)::tyfields)
+tyfields: ID COLON typeid                  ( [{name=Symbol.symbol(ID), escape=ref false, typ=typeid, pos=IDleft}:A.field] )
+        | ID COLON typeid COMMA tyfields   ( ({name=Symbol.symbol(ID), escape=ref false, typ=typeid, pos=IDleft}:A.field)::tyfields)
 
 typeid : ID                                (Symbol.symbol(ID))
 

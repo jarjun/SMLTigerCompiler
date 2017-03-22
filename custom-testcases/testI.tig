@@ -1,8 +1,9 @@
 let 
+	var m := 9
 	function kappa(a:int, b:string):int = 
-		let function pogchamp(c:int, d:string, e:string) = ()
+		let function pogchamp(c:int):int = a
 		in
 			a
 		end
-	function elegiggle(f:string) = ()
+	function elegiggle(f:string):int = 0
 in end

@@ -147,7 +147,8 @@ struct
 				|trexp (A.LetExp{decs, body, pos}) =
 				    let val {venv=venv', tenv=tenv', initList=initList'} = 
 				  		transDecs(venv, tenv, decs, level)
-				  	in 	transExp(venv', tenv', body, level)
+				  		val {exp=exp', ty=ty'} = transExp(venv', tenv', body, level)
+				  	in 	{exp=T.letBody(initList', exp'), ty=ty'}
 				  	end
 
 				|trexp (A.SeqExp (explist)) =
@@ -270,7 +271,7 @@ struct
 
 			 and trvar (A.SimpleVar(id, pos)) = (* nonexhaustive *)
 			 	   (case Symbol.look(venv, id) 
-			 	   	of SOME(Env.VarEntry{access, ty}) => {exp=T.nilExp(), ty=resolve_type(tenv,ty,pos)}  (* TODO: deal w/ actual_ty *)
+			 	   	of SOME(Env.VarEntry{access, ty}) => {exp=T.simpleVar(access, level), ty=resolve_type(tenv,ty,pos)}  (* TODO: deal w/ actual_ty *)
 			 	   	 | SOME(Env.FunEntry{...}) => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=T.nilExp(), ty=Types.INT})
 			 	   	 | NONE                 => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=T.nilExp(), ty=Types.INT}))
 
@@ -307,19 +308,19 @@ struct
 
 		   let fun trdec (A.VarDec{name, typ=NONE, init, escape, pos}, {venv, tenv, initList}) = 
 		   			let val {exp, ty=typ} = transExp(venv, tenv, init, level)
-		   		
+		   				val acc = T.allocLocal(level)(!escape)
 		   			in if typ = Types.NIL 
 					   then (ErrorMsg.error pos "error: must specify record type to assign variable to nil"; {tenv=tenv, venv=venv, initList=initList})
-					   else {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=T.allocLocal(level)(!escape), ty=typ}), initList=initList}
+					   else {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=acc, ty=typ}), initList=initList @ [T.varDec(acc, exp)]}
 		   			end
 
 		   		  |trdec (A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv, initList}) =
 		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init, level)
-		   		
+		   				val acc = T.allocLocal(level)(!escape)
 		   			in 
 		   				if sameType(tenv, pos, actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
-		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=T.allocLocal(level)(!escape), ty=typ}), initList=initList} 
-		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv, initList=initList}) (* TODO not adding to symbol table? *)
+		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=acc, ty=typ}), initList=initList} 
+		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv, initList=initList @ [T.varDec(acc, exp)]}) (* TODO not adding to symbol table? *)
 		   			end 
 
 		   		  |trdec (A.TypeDec(declist), {venv, tenv, initList}) = 

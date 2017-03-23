@@ -12,4 +12,10 @@ in end
 
 /* if 7=4 then 3=5 else 1+3 */
 
-1
+let var a := 3
+	var b := 7
+	var q := 5
+	function keepo():int = q  + a
+in
+	q + b
+end

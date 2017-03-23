@@ -23,9 +23,12 @@ sig
 	val ifThen : exp * exp -> exp
 
 	val simpleVar : access * level -> exp
-(*	val varDec : *)
+	val varDec : access * exp -> exp
+	val letBody : exp list * exp -> exp
 
 	val unNx : exp -> Tree.stm
+
+	val seq : Tree.stm list -> Tree.stm
 end
 
 structure Translate : TRANSLATE = struct
@@ -151,8 +154,8 @@ structure Translate : TRANSLATE = struct
 
 	fun intExp x = Ex(Tree.CONST(x))
 
-	fun simpleVar ((OUTER{...}, frameAccess), _ ) = (ErrorMsg.error ~1 "How dis"; Ex(Tree.CONST(0)))
-	   |simpleVar ((_, frameAccess), OUTER{...}) = (ErrorMsg.error ~1 "How dis"; Ex(Tree.CONST(0)))
+	fun simpleVar ((OUTER{...}, frameAccess), _ ) = (ErrorMsg.error ~1 "Trying to invoke variable in outer frame"; Ex(Tree.CONST(0)))
+	   |simpleVar ((_, frameAccess), OUTER{...}) = (ErrorMsg.error ~1 "Trying to invoke variable in outer frame"; Ex(Tree.CONST(0)))
 	   |simpleVar( (NORMAL{parent=parentDec, frame=frameDec, uniq=uniqDec}, frameAccess):access , 
 					NORMAL{parent=parentUsed, frame={name=_, formals=_, numFrameLocals=num}, uniq=uniqUsed}) = 
 		if uniqDec = uniqUsed
@@ -161,6 +164,11 @@ structure Translate : TRANSLATE = struct
 				unEx(simpleVar ( (NORMAL{parent=parentDec, frame=frameDec, uniq=uniqDec}, frameAccess):access, parentUsed)
 				)))) 
 
+	fun varDec ((NORMAL{parent=parentDec, frame=frameDec, uniq=uniqDec}, frameAccess):access, e1) = 
+																Nx(Tree.MOVE( Frame.exp(frameAccess)(Tree.TEMP(Frame.FP)), unEx(e1)))
+	   |varDec ((OUTER{...}, frameAccess):access, e1) = (ErrorMsg.error ~1 "Trying to declare variable in outer frame"; Ex(Tree.CONST(0)))
+
+	fun letBody(initList, expr) = Ex(Tree.ESEQ(seq(map unNx initList), unEx(expr)))
 end
 
 

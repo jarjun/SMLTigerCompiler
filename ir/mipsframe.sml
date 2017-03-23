@@ -43,8 +43,8 @@ structure MipsFrame : FRAME = struct
 		end
 
 
-	fun exp (InFrame(k)) (Tree.TEMP(FP)) = Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST(k)))
-	   |exp (InReg(k)) (Tree.TEMP(FP)) = Tree.TEMP(k)
+	fun exp (InFrame(k)) (Tree.TEMP(fp)) = Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(fp), Tree.CONST(k)))
+	   |exp (InReg(k)) (Tree.TEMP(fp)) = Tree.TEMP(k)
 	   |exp (_)(_) = (print("FP not given in frame exp"); Tree.CONST(0))
 
 

@@ -415,9 +415,11 @@ struct
 							  		in
 							  			foldl putIntoNewVenv venv combined
 							  		end
+							  		val {exp=exp', ty=ty'} = transExp(newVenv, tenv, body, newLevelFromVenv)
 							  	in 
-							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, newLevelFromVenv)), actual_ty(tenv, rt, pos)) (* need new level here *)
-							  		then {venv = venv, tenv=tenv, initList=initList}
+							  		if sameType(tenv, pos, ty', actual_ty(tenv, rt, pos)) (* need new level here *)
+							  		then (T.procEntryExit({level=newLevelFromVenv, body=exp'});
+							  				{venv = venv, tenv=tenv, initList=initList})
 							  		else (ErrorMsg.error pos ("error: function return type and body type different"); 	{venv=venv, tenv=tenv, initList=initList})
 							  	end
 
@@ -436,9 +438,11 @@ struct
 							  		in
 							  			foldl putIntoNewVenv venv combined
 							  		end
+							  		val {exp=exp', ty=ty'} = transExp(newVenv, tenv, body, newLevelFromVenv)
 							  	in 
-							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, newLevelFromVenv)), Types.UNIT) (* need new level here *)
-							  		then {venv = venv, tenv=tenv, initList=initList}
+							  		if sameType(tenv, pos, ty', Types.UNIT) (* need new level here *)
+							  		then (T.procEntryExit({level=newLevelFromVenv, body=exp'});
+							  			{venv = venv, tenv=tenv, initList=initList})
 							  		else (ErrorMsg.error pos ("error: function return type and body type different"); 	{venv=venv, tenv=tenv, initList=initList})
 							  	end
 
@@ -495,9 +499,11 @@ struct
 
 	fun transProg(expr) = let val curLevel = T.newLevel({parent=T.outermost, name=Temp.newlabel(), formals=[]})
 							  val _ = FE.findEscape(expr)
-							  val final = T.unNx(#exp(transExp(Env.base_venv, Env.base_tenv, expr, curLevel)))
+							  val final = #exp(transExp(Env.base_venv, Env.base_tenv, expr, curLevel))
+							  val _ = T.procEntryExit({level=curLevel, body=final})
+							  val finalFrags = T.getResult()
 						  in 
-						  	Printtree.printtree(TextIO.stdOut, final);
+						  	T.printResult();
 						  	() 
 						  end
 

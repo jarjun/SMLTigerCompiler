@@ -26,9 +26,12 @@ sig
 	val varDec : access * exp -> exp
 	val letBody : exp list * exp -> exp
 
-	val unNx : exp -> Tree.stm
+	val procEntryExit : {level: level, body: exp} -> unit
+	val getResult : unit -> Frame.frag list
 
 	val seq : Tree.stm list -> Tree.stm
+
+	val printResult : unit -> unit
 end
 
 structure Translate : TRANSLATE = struct
@@ -46,6 +49,8 @@ structure Translate : TRANSLATE = struct
 	type access = level * Frame.access
 
 	val outermost = OUTER( {uniq=  ref ()} )
+
+	val fragList = (ref []):(Frame.frag list ref)
 
 	fun  seq [s] = s
 	    |seq [first,second] = Tree.SEQ(first, second)
@@ -154,21 +159,33 @@ structure Translate : TRANSLATE = struct
 
 	fun intExp x = Ex(Tree.CONST(x))
 
-	fun simpleVar ((OUTER{...}, frameAccess), _ ) = (ErrorMsg.error ~1 "Trying to invoke variable in outer frame"; Ex(Tree.CONST(0)))
-	   |simpleVar ((_, frameAccess), OUTER{...}) = (ErrorMsg.error ~1 "Trying to invoke variable in outer frame"; Ex(Tree.CONST(0)))
-	   |simpleVar( (NORMAL{parent=parentDec, frame=frameDec, uniq=uniqDec}, frameAccess):access , 
-					NORMAL{parent=parentUsed, frame={name=_, formals=_, numFrameLocals=num}, uniq=uniqUsed}) = 
+	fun  findFrame(OUTER{...}, _) = (ErrorMsg.error ~1 "Variable declared in outer level"; Tree.CONST(0))
+		|findFrame(_, OUTER{...}) = (ErrorMsg.error ~1 "Can't find variable's level using static links"; Tree.CONST(0))
+		|findFrame (varLevel as (NORMAL{parent=_, frame=_, uniq=uniqDec}), 
+					useLevel as (NORMAL{parent=parentUsed, frame=_ , uniq=uniqUsed})) = 
 		if uniqDec = uniqUsed
-		then Ex(Frame.exp(frameAccess)(Tree.TEMP(Frame.FP)))
-		else Ex(Tree.MEM( Tree.BINOP(Tree.PLUS, Tree.CONST(Frame.wordSize* !num),  
-				unEx(simpleVar ( (NORMAL{parent=parentDec, frame=frameDec, uniq=uniqDec}, frameAccess):access, parentUsed)
-				)))) 
+		then Tree.TEMP(Frame.FP)
+		else Tree.MEM(findFrame(varLevel, parentUsed))
+
+	fun simpleVar ((OUTER{...}, frameAccess), _ ) = (ErrorMsg.error ~1 "Variable declared in outer level"; Ex(Tree.CONST(0)))
+	   |simpleVar ((_, frameAccess), OUTER{...}) = (ErrorMsg.error ~1 "Trying to invoke variable in outer level"; Ex(Tree.CONST(0)))
+	   |simpleVar( (varLevel, frameAccess) , useLevel) = Ex(Frame.exp(frameAccess)( findFrame(varLevel, useLevel) ))
 
 	fun varDec ((NORMAL{parent=parentDec, frame=frameDec, uniq=uniqDec}, frameAccess):access, e1) = 
 																Nx(Tree.MOVE( Frame.exp(frameAccess)(Tree.TEMP(Frame.FP)), unEx(e1)))
 	   |varDec ((OUTER{...}, frameAccess):access, e1) = (ErrorMsg.error ~1 "Trying to declare variable in outer frame"; Ex(Tree.CONST(0)))
 
-	fun letBody(initList, expr) = Ex(Tree.ESEQ(seq(map unNx initList), unEx(expr)))
+	fun  letBody([], expr) = Ex(unEx(expr))
+		|letBody(initList, expr) = Ex(Tree.ESEQ(seq(map unNx initList), unEx(expr)))
+
+	fun getResult() = !fragList
+
+	fun  procEntryExit({level=OUTER{...}, body}) = (ErrorMsg.error ~1 "Function declared in outer level"; ())
+		|procEntryExit({level=NORMAL{parent, frame, uniq}, body}) = fragList := (!fragList @ [(Frame.PROC{body=Tree.MOVE(Tree.TEMP(Frame.RV), unEx(body)), frame=frame})])
+
+	fun printResult() = List.app (fn Frame.PROC{frame= {name=n, formals=_, numFrameLocals=_}, body=body} =>(print("----------------\n"); 
+																			print(Symbol.name(n) ^ "\n");
+																			Printtree.printtree(TextIO.stdOut, body))) (!fragList);
 end
 
 

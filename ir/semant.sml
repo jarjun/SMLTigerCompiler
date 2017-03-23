@@ -97,61 +97,61 @@ struct
 				trexp (A.OpExp{left, oper=A.PlusOp, right, pos}) = 
 					  (checkInt(trexp left, pos); 
 					  checkInt(trexp right, pos);
-					  {exp=(), ty=Types.INT})
+					  {exp=T.binop(Tree.PLUS, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
 
 				|trexp (A.OpExp{left, oper=A.MinusOp, right, pos}) = 
 					  (checkInt(trexp left, pos); 
 					  checkInt(trexp right, pos);
-					  {exp=(), ty=Types.INT})
+					  {exp=T.binop(Tree.MINUS, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
 
 				|trexp (A.OpExp{left, oper=A.TimesOp, right, pos}) = 
 					  (checkInt(trexp left, pos); 
 					  checkInt(trexp right, pos);
-					  {exp=(), ty=Types.INT})
+					  {exp=T.binop(Tree.MUL, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
 
 				|trexp (A.OpExp{left, oper=A.DivideOp, right, pos}) = 
 					  (checkInt(trexp left, pos); 
 					  checkInt(trexp right, pos);
-					  {exp=(), ty=Types.INT})
+					  {exp=T.binop(Tree.DIV, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
 
 
 				(* Comparing operations, ints or strings needed *)
 				|trexp (A.OpExp{left, oper=A.LtOp, right, pos}) = 
 					  (checkComparable(trexp left, trexp right, pos);
-					  {exp=(), ty=Types.INT})		
+					  {exp=T.relop(Tree.LT, #exp(trexp left), #exp(trexp right)), ty=Types.INT})		
 
 				|trexp (A.OpExp{left, oper=A.GtOp, right, pos}) = 
 					  (checkComparable(trexp left, trexp right, pos);
-					  {exp=(), ty=Types.INT})							 			 
+					  {exp=T.relop(Tree.GT, #exp(trexp left), #exp(trexp right)), ty=Types.INT})							 			 
 
 				|trexp (A.OpExp{left, oper=A.LeOp, right, pos}) = 
 					  (checkComparable(trexp left, trexp right, pos);
-					  {exp=(), ty=Types.INT})		
+					  {exp=T.relop(Tree.LE, #exp(trexp left), #exp(trexp right)), ty=Types.INT})		
 
 				|trexp (A.OpExp{left, oper=A.GeOp, right, pos}) = 
 					  (checkComparable(trexp left, trexp right, pos);
-					  {exp=(), ty=Types.INT})		
+					  {exp=T.relop(Tree.GE, #exp(trexp left), #exp(trexp right)), ty=Types.INT})		
 
 
 				(* Equality operations, ints, strings, records, arrays, or record and nil required*)
 				|trexp (A.OpExp{left, oper=A.EqOp, right, pos}) = 
 					  (checkEqualComparable(trexp left, trexp right, pos);
-					  {exp=(), ty=Types.INT})	
+					  {exp=T.relop(Tree.EQ, #exp(trexp left), #exp(trexp right)), ty=Types.INT})	
 
 				|trexp (A.OpExp{left, oper=A.NeqOp, right, pos}) = 
 					  (checkEqualComparable(trexp left, trexp right, pos);
-					  {exp=(), ty=Types.INT})
+					  {exp=T.relop(Tree.NE, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
 
 
 				(* others *)
 				|trexp (A.LetExp{decs, body, pos}) =
-				    let val {venv=venv', tenv=tenv'} = 
+				    let val {venv=venv', tenv=tenv', initList=initList'} = 
 				  		transDecs(venv, tenv, decs, level)
 				  	in 	transExp(venv', tenv', body, level)
 				  	end
 
 				|trexp (A.SeqExp (explist)) =
-					let fun checkSeq [] = {exp=(), ty=Types.UNIT}
+					let fun checkSeq [] = {exp=T.nilExp(), ty=Types.UNIT}
 						   |checkSeq [(exp, pos)] = trexp(exp)
 						   |checkSeq ((exp, pos)::rest) = (trexp(exp); checkSeq(rest))
 					in 
@@ -166,7 +166,7 @@ struct
 								 		   resolve_type(tenv, getArrayType(actual_ty(tenv, typ, pos), pos), pos))
 							then () else ErrorMsg.error pos "error: array initial value type mismatch";
 
-					{exp=(), ty = actual_ty(tenv, typ, pos)})
+					{exp=T.nilExp(), ty = actual_ty(tenv, typ, pos)})
 
 				|trexp(A.RecordExp{fields=f, typ=typ, pos=pos}) = 
 					(let val symType = if isSome(Symbol.look(tenv, typ)) then  valOf(Symbol.look(tenv, typ)) else (ErrorMsg.error pos "error: undefined record type"; Types.NAME(typ, ref NONE)) (*TODO: clean this up*)
@@ -194,7 +194,7 @@ struct
 					in 
 						case arrRes of Types.RECORD(symlist, uniq) => compareFields(f, symlist)
 							       |_                   => ErrorMsg.error pos "error: undefined record type"; 
-						{exp=(), ty = actual_ty(tenv, typ, pos)}
+						{exp=T.nilExp(), ty = actual_ty(tenv, typ, pos)}
 					end
 					)
 
@@ -210,7 +210,7 @@ struct
 
 					in 
 						if List.length(formals) = List.length(args) then (foldl compareParams 0 formals) else (ErrorMsg.error pos "error: incorrect number of arguments"; 0);
-						{exp=(), ty=resolve_type(tenv, result, pos)} 
+						{exp=T.nilExp(), ty=resolve_type(tenv, result, pos)} 
 					end
 
 				|trexp (A.ForExp{var, escape, lo, hi, body, pos}) = 
@@ -220,16 +220,16 @@ struct
 					let val newVenv = Symbol.enter(venv, var, Env.VarEntry{access=T.allocLocal(level)(!escape), ty=Types.INT})
 					in
 						if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, level)), Types.UNIT)
-						then (loopDepth := !loopDepth-1; {exp=(), ty=Types.UNIT})
-						else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: for loop body must return unit"; {exp=(), ty=Types.INT})
+						then (loopDepth := !loopDepth-1; {exp=T.nilExp(), ty=Types.UNIT})
+						else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: for loop body must return unit"; {exp=T.nilExp(), ty=Types.INT})
 					end)
 
 				|trexp (A.WhileExp{test, body, pos}) =
 					(checkInt(trexp test, pos);
 					loopDepth := !loopDepth+1;
 					if sameType(tenv, pos, #ty(transExp(venv, tenv, body, level)), Types.UNIT)
-					then (loopDepth := !loopDepth-1; {exp=(), ty=Types.UNIT})
-					else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: while loop body must return unit"; {exp=(), ty=Types.INT}))
+					then (loopDepth := !loopDepth-1; {exp=T.nilExp(), ty=Types.UNIT})
+					else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: while loop body must return unit"; {exp=T.nilExp(), ty=Types.INT}))
 
 				|trexp (A.IfExp{test, then', else', pos}) = 
 					(checkInt(trexp test, pos);
@@ -238,12 +238,12 @@ struct
 						(if sameType(tenv, pos, resolve_type(tenv, #ty(trexp then'), pos), resolve_type(tenv, #ty(trexp (valOf(else'))), pos))
 						then ()
 						else ErrorMsg.error pos "error: branches don't have matching return type";
-						{exp=(), ty=resolve_type(tenv, #ty(trexp then'), pos)})
+						{exp=T.ifElse(#exp(trexp test), #exp(trexp then'), #exp(trexp (valOf(else')))), ty=resolve_type(tenv, #ty(trexp then'), pos)})
 					else 
 						(if sameType(tenv, pos, resolve_type(tenv, #ty(trexp then'), pos), Types.UNIT)
 						then ()
 						else ErrorMsg.error pos "error: then clause must evaluate to UNIT";
-						{exp=(), ty=Types.UNIT})
+						{exp=T.ifThen(#exp(trexp test), #exp(trexp then')), ty=Types.UNIT})
 					)
 
 
@@ -252,34 +252,34 @@ struct
 					(if sameType(tenv, pos, resolve_type(tenv, #ty(trvar(var)), pos), resolve_type(tenv, #ty(trexp exp), pos))
 					then ()
 					else ErrorMsg.error pos "error: variable and assigned expression don't have same type";
-					{exp=(), ty=Types.UNIT})
+					{exp=T.nilExp(), ty=Types.UNIT})
 
 				|trexp (A.BreakExp(pos)) = 
 					(if !loopDepth < 0
 					then ErrorMsg.error pos "error: loop depth negative, this should never happen" else ();
 					if !loopDepth > 0
-					then {exp=(), ty=Types.UNIT}
-					else (ErrorMsg.error pos "error: break expression outside of a loop";  {exp=(), ty=Types.UNIT}))
+					then {exp=T.nilExp(), ty=Types.UNIT}
+					else (ErrorMsg.error pos "error: break expression outside of a loop";  {exp=T.nilExp(), ty=Types.UNIT}))
 
 
 				(* Primitives *)
-				|trexp(A.IntExp(num)) = {exp=(), ty=Types.INT}
-				|trexp(A.StringExp(str)) = {exp=(), ty=Types.STRING}
-				|trexp(A.NilExp) = {exp=(), ty=Types.NIL} 
+				|trexp(A.IntExp(num)) = {exp=T.intExp(num), ty=Types.INT}
+				|trexp(A.StringExp(str)) = {exp=T.nilExp(), ty=Types.STRING}
+				|trexp(A.NilExp) = {exp=T.nilExp(), ty=Types.NIL} 
 
 
 			 and trvar (A.SimpleVar(id, pos)) = (* nonexhaustive *)
 			 	   (case Symbol.look(venv, id) 
-			 	   	of SOME(Env.VarEntry{access, ty}) => {exp=(), ty=resolve_type(tenv,ty,pos)}  (* TODO: deal w/ actual_ty *)
-			 	   	 | SOME(Env.FunEntry{...}) => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=(), ty=Types.INT})
-			 	   	 | NONE                 => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=(), ty=Types.INT}))
+			 	   	of SOME(Env.VarEntry{access, ty}) => {exp=T.nilExp(), ty=resolve_type(tenv,ty,pos)}  (* TODO: deal w/ actual_ty *)
+			 	   	 | SOME(Env.FunEntry{...}) => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=T.nilExp(), ty=Types.INT})
+			 	   	 | NONE                 => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=T.nilExp(), ty=Types.INT}))
 
 			 	|trvar (A.SubscriptVar(var, exp, pos)) = 
 			 		let val {exp=_, ty=varTy} = trvar(var)
 			 		in
 			 			checkInt(trexp(exp), pos);
 
-			 			{exp=(), ty= resolve_type (tenv, getArrayType( resolve_type(tenv, varTy, pos), pos), pos)}
+			 			{exp=T.nilExp(), ty= resolve_type (tenv, getArrayType( resolve_type(tenv, varTy, pos), pos), pos)}
 			 		end
 			 	|trvar (A.FieldVar(var, sym, pos)) = 
 			 		let val {exp=_, ty=varTy} = trvar(var)
@@ -290,39 +290,39 @@ struct
 			 				let val item = List.filter (fn (s, t) => Symbol.name(s) = Symbol.name(sym)) l
 
 			 				in
-			 					case item of [(s, t)] => {exp=(), ty=resolve_type(tenv, t, pos)}
-							 			        |[]       => (ErrorMsg.error pos ("error: paramter error for " ^ Symbol.name(sym)); {exp=(), ty=Types.INT})
-							 			        |_        => (ErrorMsg.error pos "error: record parameter matches multiple fields"; {exp=(), ty=Types.INT}) (*this should never happen*)
+			 					case item of [(s, t)] => {exp=T.nilExp(), ty=resolve_type(tenv, t, pos)}
+							 			        |[]       => (ErrorMsg.error pos ("error: paramter error for " ^ Symbol.name(sym)); {exp=T.nilExp(), ty=Types.INT})
+							 			        |_        => (ErrorMsg.error pos "error: record parameter matches multiple fields"; {exp=T.nilExp(), ty=Types.INT}) (*this should never happen*)
 
 			 				end
-			 				         |_                  => (ErrorMsg.error pos "error: variable not a record"; {exp=(), ty=Types.INT})
+			 				         |_                  => (ErrorMsg.error pos "error: variable not a record"; {exp=T.nilExp(), ty=Types.INT})
 			 		end
 
 
 
 		in trexp(exp) end
 
-	and transDecs(venv, tenv, [], level) = {venv=venv, tenv=tenv}
+	and transDecs(venv, tenv, [], level) = {venv=venv, tenv=tenv, initList = []}
 	   |transDecs(venv, tenv, decs, level) = 
 
-		   let fun trdec (A.VarDec{name, typ=NONE, init, escape, pos}, {venv, tenv}) = 
+		   let fun trdec (A.VarDec{name, typ=NONE, init, escape, pos}, {venv, tenv, initList}) = 
 		   			let val {exp, ty=typ} = transExp(venv, tenv, init, level)
 		   		
 		   			in if typ = Types.NIL 
-					   then (ErrorMsg.error pos "error: must specify record type to assign variable to nil"; {tenv=tenv, venv=venv})
-					   else {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=T.allocLocal(level)(!escape), ty=typ})}
+					   then (ErrorMsg.error pos "error: must specify record type to assign variable to nil"; {tenv=tenv, venv=venv, initList=initList})
+					   else {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=T.allocLocal(level)(!escape), ty=typ}), initList=initList}
 		   			end
 
-		   		  |trdec (A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv}) =
+		   		  |trdec (A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv, initList}) =
 		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init, level)
 		   		
 		   			in 
 		   				if sameType(tenv, pos, actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
-		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=T.allocLocal(level)(!escape), ty=typ})} 
-		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv}) (* TODO not adding to symbol table? *)
+		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=T.allocLocal(level)(!escape), ty=typ}), initList=initList} 
+		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv, initList=initList}) (* TODO not adding to symbol table? *)
 		   			end 
 
-		   		  |trdec (A.TypeDec(declist), {venv, tenv}) = 
+		   		  |trdec (A.TypeDec(declist), {venv, tenv, initList}) = 
 		   		  	let fun processTyDec (tenv, venv, {name, ty=A.NameTy(typ, tyPos), pos}) = 
 				   		  		let val typName = Symbol.look(tenv, typ)
 				   		  			val ourName = valOf(Symbol.look(tenv, name))
@@ -337,7 +337,7 @@ struct
 				   		  			if isCycle(tenv, name, []) 
 				   		  			then (ErrorMsg.error pos "error: cyclic types are not valid"; updateRef(ourName, NONE))
 				   		  			else ();
-				   		  			{tenv=tenv, venv=venv}
+				   		  			{tenv=tenv, venv=venv, initList=initList}
 				   		  		end
 
 		   		  		   |processTyDec (tenv, venv, {name, ty=A.RecordTy(fieldlist), pos}) = 
@@ -356,7 +356,7 @@ struct
 				   		  			   |updateRef (_) = ()
 		   		  		   		in 
 		   		  		   			updateRef(ourName, recTyp);
-		   		  		   			{tenv=tenv, venv=venv}
+		   		  		   			{tenv=tenv, venv=venv, initList=initList}
 		   		  		   		end
 
 		   		  		   |processTyDec (tenv, venv, {name, ty=A.ArrayTy(typ, tyPos), pos}) = 
@@ -368,39 +368,39 @@ struct
 				   		  			   |updateRef (_) = ()
 		   		  		   		in
 		   		  		   			updateRef(ourName, arrTyp);
-		   		  		   			{tenv=tenv, venv=venv}
+		   		  		   			{tenv=tenv, venv=venv, initList=initList}
 		   		  		   		end
 
 
-		   		  		fun enterDecs (tenv, venv, l, []) = {tenv=tenv, venv=venv}
+		   		  		fun enterDecs (tenv, venv, l, []) = {tenv=tenv, venv=venv, initList=initList}
 		   		  		   |enterDecs (tenv, venv, l, [dec]) = if listContains(l, #name(dec))
-						   									then (ErrorMsg.error (#pos(dec)) ("error: can't redeclare type " ^ Symbol.name(#name(dec)) ^ " in type declaration block"); {tenv=tenv, venv=venv})
+						   									then (ErrorMsg.error (#pos(dec)) ("error: can't redeclare type " ^ Symbol.name(#name(dec)) ^ " in type declaration block"); {tenv=tenv, venv=venv, initList=initList})
 						   									else processTyDec(tenv, venv, dec)
 
 		   		  		   |enterDecs (tenv, venv, l, (dec::rest)) = 
-		   		  		   		let val {venv=venv', tenv=tenv'} = if listContains(l, #name(dec)) 
-						   										   then (ErrorMsg.error (#pos(dec)) ("error: can't redeclare type " ^ Symbol.name(#name(dec)) ^ " in type declaration block"); {tenv=tenv, venv=venv})
+		   		  		   		let val {venv=venv', tenv=tenv', initList=initList'} = if listContains(l, #name(dec)) 
+						   										   then (ErrorMsg.error (#pos(dec)) ("error: can't redeclare type " ^ Symbol.name(#name(dec)) ^ " in type declaration block"); {tenv=tenv, venv=venv, initList=initList})
 						   										   else processTyDec(tenv, venv, dec) 
 		   		  		   		in
 		   		  		   			enterDecs(tenv', venv', l @ [#name(dec)], rest)
 								end
 
-						fun initDecs (tenv, venv, []) = {tenv=tenv, venv=venv}
-						   |initDecs (tenv, venv, [{name, ty, pos}]) = {tenv = Symbol.enter (tenv, name, Types.NAME (name, (ref NONE)) ), venv=venv}
+						fun initDecs (tenv, venv, []) = {tenv=tenv, venv=venv, initList=initList}
+						   |initDecs (tenv, venv, [{name, ty, pos}]) = {tenv = Symbol.enter (tenv, name, Types.NAME (name, (ref NONE)) ), venv=venv, initList=initList}
 						   |initDecs (tenv, venv, {name,ty,pos}::rest) = 
-		   		  		   		let val {venv=venv', tenv=tenv'} = {tenv = Symbol.enter (tenv, name, Types.NAME (name, (ref NONE)) ), venv=venv}
+		   		  		   		let val {venv=venv', tenv=tenv', initList=initList'} = {tenv = Symbol.enter (tenv, name, Types.NAME (name, (ref NONE)) ), venv=venv, initList=initList}
 		   		  		   		in
 		   		  		   			initDecs(tenv', venv', rest)
 								end
 					in
-						let val {venv=venv', tenv=tenv'} = initDecs(tenv, venv, declist)						
+						let val {venv=venv', tenv=tenv', initList=initList'} = initDecs(tenv, venv, declist)						
 						in 
 							enterDecs(tenv', venv', [], declist)
 						end
 					end
 		   		  
 
-				  |trdec(A.FunctionDec(fundeclist), {venv, tenv}) = 
+				  |trdec(A.FunctionDec(fundeclist), {venv, tenv, initList}) = 
 				  	let fun processFunDec( tenv, venv, {name, params, body, pos, result=SOME(rt, posi)} ) = 
 				  				
 						  		let val symbolTableEntry = Symbol.look(venv, name)
@@ -416,8 +416,8 @@ struct
 							  		end
 							  	in 
 							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, newLevelFromVenv)), actual_ty(tenv, rt, pos)) (* need new level here *)
-							  		then {venv = venv, tenv=tenv}
-							  		else (ErrorMsg.error pos ("error: function return type and body type different"); 	{venv=venv, tenv=tenv})
+							  		then {venv = venv, tenv=tenv, initList=initList}
+							  		else (ErrorMsg.error pos ("error: function return type and body type different"); 	{venv=venv, tenv=tenv, initList=initList})
 							  	end
 
 
@@ -437,8 +437,8 @@ struct
 							  		end
 							  	in 
 							  		if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, newLevelFromVenv)), Types.UNIT) (* need new level here *)
-							  		then {venv = venv, tenv=tenv}
-							  		else (ErrorMsg.error pos ("error: function return type and body type different"); 	{venv=venv, tenv=tenv})
+							  		then {venv = venv, tenv=tenv, initList=initList}
+							  		else (ErrorMsg.error pos ("error: function return type and body type different"); 	{venv=venv, tenv=tenv, initList=initList})
 							  	end
 
 
@@ -446,24 +446,24 @@ struct
 					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) (* TODO all params are true now *)
 					  				val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
 					  			in
-					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = actual_ty(tenv, rt, pos)}), tenv=tenv}
+					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = actual_ty(tenv, rt, pos)}), tenv=tenv, initList=initList}
 					  			end
 
 					  	   |addFunctionToVenv(venv, tenv, {name, params, body, pos, result=NONE}) = 
 					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) (* TODO all params are true now *)
 					  				val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
 					  			in
-					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = Types.UNIT}), tenv=tenv}
+					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = Types.UNIT}), tenv=tenv, initList=initList}
 					  			end
 
 
-				  		fun initDecs (tenv, venv, l, []) = {venv=venv, tenv=tenv}
+				  		fun initDecs (tenv, venv, l, []) = {venv=venv, tenv=tenv, initList=initList}
 				  		   |initDecs (tenv, venv, l, [fndec] ) = if listContains(l, #name(fndec))
-						   									  then (ErrorMsg.error (#pos(fndec)) ("error: can't redeclare function " ^ Symbol.name(#name(fndec)) ^ " in function declaration block"); {tenv=tenv, venv=venv})
+						   									  then (ErrorMsg.error (#pos(fndec)) ("error: can't redeclare function " ^ Symbol.name(#name(fndec)) ^ " in function declaration block"); {tenv=tenv, venv=venv, initList=initList})
 						   									  else addFunctionToVenv(venv, tenv, fndec)
 				  		   |initDecs (tenv, venv, l, fndec::rest ) = 
-				  		    	let val {venv=venv', tenv=tenv'} = if listContains(l, #name(fndec)) 
-						   										   then (ErrorMsg.error (#pos(fndec)) ("error: can't redeclare function " ^ Symbol.name(#name(fndec)) ^ " in function declaration block"); {tenv=tenv, venv=venv})
+				  		    	let val {venv=venv', tenv=tenv', initList=initList'} = if listContains(l, #name(fndec)) 
+						   										   then (ErrorMsg.error (#pos(fndec)) ("error: can't redeclare function " ^ Symbol.name(#name(fndec)) ^ " in function declaration block"); {tenv=tenv, venv=venv, initList=initList})
 						   										   else addFunctionToVenv(venv, tenv, fndec)
 		   		  		   		in
 		   		  		   			initDecs(tenv', venv', l @ [#name(fndec)], rest)
@@ -471,16 +471,16 @@ struct
 
 
 
-		   		  		fun enterDecs (tenv, venv, []) = {tenv=tenv, venv=venv}
+		   		  		fun enterDecs (tenv, venv, []) = {tenv=tenv, venv=venv, initList=initList}
 		   		  		   |enterDecs (tenv, venv, [fndec]) = processFunDec(tenv, venv, fndec)
 		   		  		   |enterDecs (tenv, venv, fndec::rest) = 
-		   		  		   		let val {venv=venv', tenv=tenv'} = processFunDec(tenv, venv, fndec) 
+		   		  		   		let val {venv=venv', tenv=tenv', initList=initList'} = processFunDec(tenv, venv, fndec) 
 		   		  		   		in
 		   		  		   			enterDecs(tenv', venv', rest)
 								end
 
 				  	in
-				  		let val {venv=venv', tenv=tenv'} = initDecs(tenv, venv, [], fundeclist)						
+				  		let val {venv=venv', tenv=tenv', initList=initList'} = initDecs(tenv, venv, [], fundeclist)						
 						in 
 							enterDecs(tenv', venv', fundeclist)
 						end
@@ -489,12 +489,15 @@ struct
 		   		  
 		   		
 
-		   	in foldl trdec {venv=venv, tenv=tenv} decs
+		   	in foldl trdec {venv=venv, tenv=tenv, initList=[]} decs
 		   	end
 
 	fun transProg(expr) = let val curLevel = T.newLevel({parent=T.outermost, name=Temp.newlabel(), formals=[]})
 							  val _ = FE.findEscape(expr)
-							  val final = transExp(Env.base_venv, Env.base_tenv, expr, curLevel)
-						  in () end
+							  val final = T.unNx(#exp(transExp(Env.base_venv, Env.base_tenv, expr, curLevel)))
+						  in 
+						  	Printtree.printtree(TextIO.stdOut, final);
+						  	() 
+						  end
 
 end

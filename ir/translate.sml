@@ -13,10 +13,19 @@ sig
 	val printLevel : level -> unit
 	val printAccess : access -> unit
 
-	val unEx: exp -> Tree.exp
-	val unNx: exp -> Tree.stm
-	val unCx: exp -> (Temp.label * Temp.label -> Tree.stm)
 
+	val binop : Tree.binop * exp * exp -> exp
+	val relop : Tree.relop * exp * exp -> exp
+	val nilExp : unit -> exp
+	val intExp : int -> exp
+
+	val ifElse : exp * exp * exp -> exp
+	val ifThen : exp * exp -> exp
+
+	val simpleVar : access * level -> exp
+(*	val varDec : *)
+
+	val unNx : exp -> Tree.stm
 end
 
 structure Translate : TRANSLATE = struct
@@ -106,15 +115,57 @@ structure Translate : TRANSLATE = struct
 
 
 
-	
-	
+	fun binop(oper, e1, e2) = Ex(Tree.BINOP(oper, unEx(e1), unEx(e2)))
 
+	fun relop(oper, e1, e2) = Cx( (fn (t,f) => Tree.CJUMP(oper, unEx(e1), unEx(e2), t, f) ) )
 
+	fun ifElse(e1, e2, e3) = 	   	  
+		let val r = Temp.newtemp()
+	   	  	val t = Temp.newlabel() and f = Temp.newlabel() and join = Temp.newlabel()
+	   	  in 
+	   	  	  Ex(Tree.ESEQ(seq[ unCx(e1)(t,f),
+	   	  	  				 Tree.LABEL t,
+	   	  	  				 Tree.MOVE(Tree.TEMP r, unEx(e2)),
+	   	  	  				 Tree.JUMP (Tree.NAME join, [join]),
 
+	   	  	  				 Tree.LABEL f,
+	   	  	  				 Tree.MOVE(Tree.TEMP r, unEx(e3)),
+	   	  	  				 (*Tree.JUMP (Tree.NAME join, [join]),*)
+	   	  	  				 Tree.LABEL join], 
 
+	   	  	  			Tree.TEMP r))
+	   	  end
 
+	fun ifThen(e1, e2) = 
+		let val r = Temp.newtemp()
+	   	  	val t = Temp.newlabel() and join = Temp.newlabel()
+	   	  in 
+	   	  	  Nx(seq[ unCx(e1)(t,join),
+	   	  	  				 Tree.LABEL t,
+	   	  	  				 Tree.EXP(unEx(e2)),
+	   	  	  				 (*Tree.JUMP (Tree.NAME join, [join]),*)
+	   	  	  				 Tree.LABEL join])
+	   	  end
+
+	fun nilExp() = Ex(Tree.CONST(0))
+
+	fun intExp x = Ex(Tree.CONST(x))
+
+	fun simpleVar ((OUTER{...}, frameAccess), _ ) = (ErrorMsg.error ~1 "How dis"; Ex(Tree.CONST(0)))
+	   |simpleVar ((_, frameAccess), OUTER{...}) = (ErrorMsg.error ~1 "How dis"; Ex(Tree.CONST(0)))
+	   |simpleVar( (NORMAL{parent=parentDec, frame=frameDec, uniq=uniqDec}, frameAccess):access , 
+					NORMAL{parent=parentUsed, frame={name=_, formals=_, numFrameLocals=num}, uniq=uniqUsed}) = 
+		if uniqDec = uniqUsed
+		then Ex(Frame.exp(frameAccess)(Tree.TEMP(Frame.FP)))
+		else Ex(Tree.MEM( Tree.BINOP(Tree.PLUS, Tree.CONST(Frame.wordSize* !num),  
+				unEx(simpleVar ( (NORMAL{parent=parentDec, frame=frameDec, uniq=uniqDec}, frameAccess):access, parentUsed)
+				)))) 
 
 end
+
+
+
+
 
 
 

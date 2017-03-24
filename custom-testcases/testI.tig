@@ -67,11 +67,14 @@ in
 end
 */
 
+/*
 let var a := 1
 	/* function abc():int = 9 */
 in 
 while a<10 do 
 	while 1+1 do break
 end
+*/
 
+for i := 5 to 10 do break
 

@@ -225,15 +225,22 @@ struct
 					end
 
 				|trexp (A.ForExp{var, escape, lo, hi, body, pos}) = 
-					(checkInt(trexp lo, pos);
-					checkInt(trexp hi, pos);
-					loopDepth := !loopDepth+1;
-					let val newVenv = Symbol.enter(venv, var, Env.VarEntry{access=T.allocLocal(level)(!escape), ty=Types.INT})
+					let val newBreakLabel = (loopDepth := !loopDepth+1; Temp.newlabel())
+						val {exp=expLo, ty=tyLo} = trexp lo
+						val {exp=expHi, ty=tyHi} = trexp hi
 					in
-						if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, level, nearestDone)), Types.UNIT) (* CHANGE DONE LABEL *)
-						then (loopDepth := !loopDepth-1; {exp=T.nilExp(), ty=Types.UNIT})
-						else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: for loop body must return unit"; {exp=T.nilExp(), ty=Types.INT})
-					end)
+
+
+						(checkInt( {exp=expLo, ty=tyLo} , pos);
+						checkInt( {exp=expHi, ty=tyHi} , pos);
+						let val newVenv = Symbol.enter(venv, var, Env.VarEntry{access=T.allocLocal(level)(!escape), ty=Types.INT})
+							val {exp=expBody, ty=tyBody} = transExp(newVenv, tenv, body, level, SOME(newBreakLabel)) (* CHANGE DONE LABEL *)
+						in
+							if sameType(tenv, pos, tyBody, Types.UNIT)
+							then (loopDepth := !loopDepth-1; {exp=T.forExp(expLo, expHi, expBody, newBreakLabel), ty=Types.UNIT})
+							else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: for loop body must return unit"; {exp=T.nilExp(), ty=Types.INT})
+						end)
+					end
 
 				|trexp (A.WhileExp{test, body, pos}) =
 					let val newBreakLabel = (loopDepth := !loopDepth+1; Temp.newlabel())

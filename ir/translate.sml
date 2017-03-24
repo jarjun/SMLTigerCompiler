@@ -27,6 +27,8 @@ sig
 	val letBody : exp list * exp -> exp
 	val arrExp : exp * exp -> exp
 	val subscriptExp: exp * exp -> exp
+	val recordExp : exp list -> exp
+	
 
 	val procEntryExit : {level: level, body: exp} -> unit
 	val getResult : unit -> Frame.frag list
@@ -217,6 +219,31 @@ structure Translate : TRANSLATE = struct
 		))
 
 		end
+
+	fun recordExp (explist) = 
+		let 
+			val recPointer = Temp.newtemp()
+			val numFields = List.length(explist)
+
+			fun helper (curExp, (curMoveList, curIdx)) = (curMoveList @ [Tree.MOVE(
+																				Tree.MEM(
+																						Tree.BINOP(Tree.PLUS, 
+																								   Tree.MEM(Tree.TEMP(recPointer)), 
+																								   Tree.CONST(curIdx * Frame.wordSize))
+																						),
+																				unEx(curExp)
+																				  )
+																			], curIdx+1)
+
+			val (moveList, fieldIdx) = foldl helper ([], 0) explist
+
+		in
+			Ex(Tree.ESEQ(seq ([ Tree.MOVE(Tree.TEMP(recPointer), Frame.externalCall("allocRecord", [Tree.CONST(numFields)])) ] @ moveList),
+
+						Tree.TEMP(recPointer))
+			  )
+		end
+
 	fun getResult() = !fragList
 
 	fun  procEntryExit({level=OUTER{...}, body}) = (ErrorMsg.error ~1 "Function declared in outer level"; ())

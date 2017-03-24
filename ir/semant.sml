@@ -117,30 +117,54 @@ struct
 
 				(* Comparing operations, ints or strings needed *)
 				|trexp (A.OpExp{left, oper=A.LtOp, right, pos}) = 
-					  (checkComparable(trexp left, trexp right, pos);
-					  {exp=T.relop(Tree.LT, #exp(trexp left), #exp(trexp right)), ty=Types.INT})		
+						let val {exp=expLeft, ty=tyLeft} = trexp left
+							val {exp=expRight, ty=tyRight} = trexp right
+						in
+						  (checkComparable({exp=expLeft, ty=tyLeft}, {exp=expRight, ty=tyRight}, pos);
+						  {exp=T.relop(Tree.LT, expLeft, expRight, tyLeft), ty=Types.INT})
+						end		
 
 				|trexp (A.OpExp{left, oper=A.GtOp, right, pos}) = 
-					  (checkComparable(trexp left, trexp right, pos);
-					  {exp=T.relop(Tree.GT, #exp(trexp left), #exp(trexp right)), ty=Types.INT})							 			 
+					  let val {exp=expLeft, ty=tyLeft} = trexp left
+							val {exp=expRight, ty=tyRight} = trexp right
+						in
+						  (checkComparable({exp=expLeft, ty=tyLeft}, {exp=expRight, ty=tyRight}, pos);
+						  {exp=T.relop(Tree.GT, expLeft, expRight, tyLeft), ty=Types.INT})
+						end									 			 
 
 				|trexp (A.OpExp{left, oper=A.LeOp, right, pos}) = 
-					  (checkComparable(trexp left, trexp right, pos);
-					  {exp=T.relop(Tree.LE, #exp(trexp left), #exp(trexp right)), ty=Types.INT})		
+					  let val {exp=expLeft, ty=tyLeft} = trexp left
+							val {exp=expRight, ty=tyRight} = trexp right
+						in
+						  (checkComparable({exp=expLeft, ty=tyLeft}, {exp=expRight, ty=tyRight}, pos);
+						  {exp=T.relop(Tree.LE, expLeft, expRight, tyLeft), ty=Types.INT})
+						end				
 
 				|trexp (A.OpExp{left, oper=A.GeOp, right, pos}) = 
-					  (checkComparable(trexp left, trexp right, pos);
-					  {exp=T.relop(Tree.GE, #exp(trexp left), #exp(trexp right)), ty=Types.INT})		
+					  let val {exp=expLeft, ty=tyLeft} = trexp left
+							val {exp=expRight, ty=tyRight} = trexp right
+						in
+						  (checkComparable({exp=expLeft, ty=tyLeft}, {exp=expRight, ty=tyRight}, pos);
+						  {exp=T.relop(Tree.GE, expLeft, expRight, tyLeft), ty=Types.INT})
+						end				
 
 
 				(* Equality operations, ints, strings, records, arrays, or record and nil required*)
 				|trexp (A.OpExp{left, oper=A.EqOp, right, pos}) = 
-					  (checkEqualComparable(trexp left, trexp right, pos);
-					  {exp=T.relop(Tree.EQ, #exp(trexp left), #exp(trexp right)), ty=Types.INT})	
+					  let val {exp=expLeft, ty=tyLeft} = trexp left
+							val {exp=expRight, ty=tyRight} = trexp right
+						in
+						  (checkEqualComparable({exp=expLeft, ty=tyLeft}, {exp=expRight, ty=tyRight}, pos);
+						  {exp=T.relop(Tree.EQ, expLeft, expRight, tyLeft), ty=Types.INT})
+						end			
 
 				|trexp (A.OpExp{left, oper=A.NeqOp, right, pos}) = 
-					  (checkEqualComparable(trexp left, trexp right, pos);
-					  {exp=T.relop(Tree.NE, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
+					  let val {exp=expLeft, ty=tyLeft} = trexp left
+							val {exp=expRight, ty=tyRight} = trexp right
+						in
+						  (checkEqualComparable({exp=expLeft, ty=tyLeft}, {exp=expRight, ty=tyRight}, pos);
+						  {exp=T.relop(Tree.NE, expLeft, expRight, tyLeft), ty=Types.INT})
+						end		
 
 
 				(* others *)
@@ -292,7 +316,7 @@ struct
 
 				(* Primitives *)
 				|trexp(A.IntExp(num)) = {exp=T.intExp(num), ty=Types.INT}
-				|trexp(A.StringExp(str)) = {exp=T.nilExp(), ty=Types.STRING}
+				|trexp(A.StringExp(lit, pos)) = {exp=T.stringExp(lit), ty=Types.STRING}
 				|trexp(A.NilExp) = {exp=T.nilExp(), ty=Types.NIL} 
 
 

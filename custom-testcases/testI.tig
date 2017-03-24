@@ -87,10 +87,19 @@ in
 end
 */
 
-let var x = 3
+/*
+let var x := 3
 	function westicle():int = x	
 in
-	(1; (2;"a";x)) + (("b"; "c"); 7)
+	(1; (2;"a";x)) + (("b"; "c"; "a"; "a"; "abc"); 7)
+end
+*/
+
+let
+	function str():string = "abc"
+	var a := "abc"
+in
+	a = str()
 end
 
 

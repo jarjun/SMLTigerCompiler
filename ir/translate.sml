@@ -15,7 +15,7 @@ sig
 
 
 	val binop : Tree.binop * exp * exp -> exp
-	val relop : Tree.relop * exp * exp -> exp
+	val relop : Tree.relop * exp * exp * Types.ty -> exp
 	val nilExp : unit -> exp
 	val intExp : int -> exp
 
@@ -33,6 +33,7 @@ sig
 	val whileExp : exp * exp * Temp.label -> exp
 	val forExp: exp * exp * exp * Temp.label -> exp
 	val breakExp: Temp.label option -> exp
+	val stringExp: string -> exp
 
 	val seqExp: exp list -> exp
 
@@ -136,7 +137,13 @@ structure Translate : TRANSLATE = struct
 
 	fun binop(oper, e1, e2) = Ex(Tree.BINOP(oper, unEx(e1), unEx(e2)))
 
-	fun relop(oper, e1, e2) = Cx( (fn (t,f) => Tree.CJUMP(oper, unEx(e1), unEx(e2), t, f) ) )
+	fun  relop(Tree.EQ, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringEqual", [unEx(e1), unEx(e2)]))
+		|relop(Tree.NE, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringNE", [unEx(e1), unEx(e2)]))
+		|relop(Tree.LT, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringLT", [unEx(e1), unEx(e2)]))
+		|relop(Tree.GT, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringGT", [unEx(e1), unEx(e2)]))
+		|relop(Tree.LE, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringLE", [unEx(e1), unEx(e2)]))
+		|relop(Tree.GE, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringGE", [unEx(e1), unEx(e2)]))
+		|relop(oper, e1, e2, _) = Cx( (fn (t,f) => Tree.CJUMP(oper, unEx(e1), unEx(e2), t, f) ) )
 
 	fun ifElse(e1, e2, e3) = 	   	  
 		let val r = Temp.newtemp()
@@ -308,6 +315,27 @@ structure Translate : TRANSLATE = struct
 	   			Ex(Tree.ESEQ( seq( map unNx newList), unEx(last)))
 	   		end
 
+	fun stringExp (lit) = 
+		let
+			val equalStrings = List.filter (fn Frame.PROC(_) => false
+							  				  |Frame.STRING(labTest, litTest) => case String.compare(litTest, lit) of EQUAL => true 
+							  													                                      |_    => false
+											) (!fragList)
+		in
+			if (List.length(equalStrings) = 0)
+			then let 
+				 	val lab = Temp.newlabel()
+					val frag = Frame.STRING(lab, lit)
+				  in
+					fragList := !fragList @ [frag];
+					Ex(Tree.NAME(lab))
+				  end
+			else let 
+					val Frame.STRING(lab, _) = List.nth(equalStrings, 0)
+				 in 
+					Ex(Tree.NAME(lab))
+				 end
+		end
 
 	fun getResult() = !fragList
 
@@ -316,7 +344,11 @@ structure Translate : TRANSLATE = struct
 
 	fun printResult() = List.app (fn Frame.PROC{frame= {name=n, formals=_, numFrameLocals=_}, body=body} =>(print("----------------\n"); 
 																			print(Symbol.name(n) ^ "\n");
-																			Printtree.printtree(TextIO.stdOut, body))) (!fragList);
+																			Printtree.printtree(TextIO.stdOut, body))
+
+									|Frame.STRING(lab, lit) => (print("----------------\n"); print(Symbol.name(lab) ^ "\n"); print lit; print "\n")
+								  )   
+							(!fragList);
 end
 
 

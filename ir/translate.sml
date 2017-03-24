@@ -28,7 +28,8 @@ sig
 	val arrExp : exp * exp -> exp
 	val subscriptExp: exp * exp -> exp
 	val recordExp : exp list -> exp
-	
+	val fieldVar : exp * int -> exp
+	val assignExp : exp * exp -> exp
 
 	val procEntryExit : {level: level, body: exp} -> unit
 	val getResult : unit -> Frame.frag list
@@ -243,6 +244,10 @@ structure Translate : TRANSLATE = struct
 						Tree.TEMP(recPointer))
 			  )
 		end
+
+	fun fieldVar (recPointer, num) = Ex(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.MEM(unEx(recPointer)), Tree.CONST(num*Frame.wordSize))))
+
+	fun assignExp (var, value) = Nx(Tree.MOVE(unEx(var), unEx(value)))
 
 	fun getResult() = !fragList
 

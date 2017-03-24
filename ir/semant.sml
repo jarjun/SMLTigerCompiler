@@ -183,23 +183,29 @@ struct
 															   |_                => (ErrorMsg.error pos "error: this should never happen in record exp"; Types.NAME(Symbol.symbol(""), ref NONE))
 
 						 val arrRes = if isSome(!r) then resolve_type(tenv, valOf(!r), pos) else (ErrorMsg.error pos "error: not a record type"; Types.INT)
+						 val resolveFields = map (fn (s, e, p) => (s, (trexp e), p)) f
+
 						 fun compareFields([], []) = ()
 						 	|compareFields([], expectedList) = ErrorMsg.error pos "error: not all record parameters defined"
 						 	|compareFields(fieldlist, []) = ErrorMsg.error pos "error: too many record parameters defined"
-						 	|compareFields(((sym, exp, pos)::rest), expectedList) = 
-							 	let val item = List.filter (fn (s, t) => Symbol.name(s) = Symbol.name(sym)) expectedList
+						 	|compareFields(((sym, {exp=exp', ty=ty'}, pos)::rest), (expectedSym, t)::expectedList) = 
+						 		if Symbol.name(sym) = Symbol.name(expectedSym) andalso sameType(tenv, pos, resolve_type(tenv, ty', pos), resolve_type(tenv, t, pos))
+						 		then compareFields(rest, expectedList)
+						 		else ErrorMsg.error pos ("error: record parameter mismatch " ^ Symbol.name(sym) ^ " and " ^ Symbol.name(expectedSym) )
+
+(*							 	let val item = List.filter (fn (s, t) => Symbol.name(s) = Symbol.name(sym)) expectedList
 							 	in 
 							 		case item of [(s, t)] => (if sameType(tenv, pos, #ty(trexp(exp)), resolve_type(tenv, t, pos)) then () else ErrorMsg.error pos ("error: record parameter type mismatch " ^ typeToString(#ty(trexp(exp))) ^ " and " ^ typeToString(t) ); compareFields(rest, 
 							 			                                                            List.filter (fn (s, t) => Symbol.name(s) <> Symbol.name(sym)) expectedList))
 							 			        |[]       => ErrorMsg.error pos ("error: paramter error for " ^ Symbol.name(sym))
-							 			        |_        => ErrorMsg.error pos "error: record parameter matches multiple fields" (*this should never happen*)
+							 			        |_        => ErrorMsg.error pos "error: record parameter matches multiple fields"
 
-							 	end
+							 	end *)
 
 					in 
-						case arrRes of Types.RECORD(symlist, uniq) => compareFields(f, symlist)
+						case arrRes of Types.RECORD(symlist, uniq) => compareFields(resolveFields, symlist)
 							       |_                   => ErrorMsg.error pos "error: undefined record type"; 
-						{exp=T.nilExp(), ty = actual_ty(tenv, typ, pos)}
+						{exp=T.recordExp(map (fn (s, e, p) => #exp(e)) resolveFields), ty = actual_ty(tenv, typ, pos)}
 					end
 					)
 
@@ -254,10 +260,13 @@ struct
 
 
 				|trexp (A.AssignExp{var, exp, pos}) = 
-					(if sameType(tenv, pos, resolve_type(tenv, #ty(trvar(var)), pos), resolve_type(tenv, #ty(trexp exp), pos))
-					then ()
-					else ErrorMsg.error pos "error: variable and assigned expression don't have same type";
-					{exp=T.nilExp(), ty=Types.UNIT})
+					let val {exp=varExp, ty=varTy} = trvar(var)
+						val {exp=expExp, ty=expTy} = trexp(exp)
+					in 
+						if sameType(tenv, pos, resolve_type(tenv, varTy, pos), resolve_type(tenv, expTy, pos))
+						then {exp=T.assignExp(varExp, expExp), ty=Types.UNIT}
+						else (ErrorMsg.error pos "error: variable and assigned expression don't have same type"; {exp=T.nilExp(), ty=Types.UNIT})
+					end
 
 				|trexp (A.BreakExp(pos)) = 
 					(if !loopDepth < 0
@@ -288,15 +297,28 @@ struct
 			 			{exp=T.subscriptExp(varExp, #exp(index)), ty= resolve_type (tenv, getArrayType( resolve_type(tenv, varTy, pos), pos), pos)}
 			 		end
 			 	|trvar (A.FieldVar(var, sym, pos)) = 
-			 		let val {exp=_, ty=varTy} = trvar(var)
+			 		let val {exp=varExp, ty=varTy} = trvar(var)
 			 			val recTy = resolve_type(tenv, varTy, pos)
 
 			 		in 
 			 			case recTy of Types.RECORD(l, u) => 
 			 				let val item = List.filter (fn (s, t) => Symbol.name(s) = Symbol.name(sym)) l
 
+			 				val (endIdx, answerIdx) = 
+
+				 				let fun helper ( _, (curIdx, ans)) = 
+				 					let val (s,t) = List.nth(l, curIdx)
+				 					in
+				 						if Symbol.name(s) = Symbol.name(sym) then (curIdx+1, curIdx) else (curIdx+1, ans)
+				 					end
+
+				 				in
+				 					foldl helper (0,~1) l
+				 				end
+
+
 			 				in
-			 					case item of [(s, t)] => {exp=T.nilExp(), ty=resolve_type(tenv, t, pos)}
+			 					case item of [(s, t)] => {exp=T.fieldVar(varExp, answerIdx), ty=resolve_type(tenv, t, pos)}
 							 			        |[]       => (ErrorMsg.error pos ("error: paramter error for " ^ Symbol.name(sym)); {exp=T.nilExp(), ty=Types.INT})
 							 			        |_        => (ErrorMsg.error pos "error: record parameter matches multiple fields"; {exp=T.nilExp(), ty=Types.INT}) (*this should never happen*)
 

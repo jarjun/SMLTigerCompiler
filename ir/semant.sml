@@ -280,11 +280,12 @@ struct
 			 	   	 | NONE                 => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=T.nilExp(), ty=Types.INT}))
 
 			 	|trvar (A.SubscriptVar(var, exp, pos)) = 
-			 		let val {exp=_, ty=varTy} = trvar(var)
+			 		let val {exp=varExp, ty=varTy} = trvar(var)
+			 			val index = trexp(exp)
 			 		in
-			 			checkInt(trexp(exp), pos);
+			 			checkInt(index, pos);
 
-			 			{exp=T.nilExp(), ty= resolve_type (tenv, getArrayType( resolve_type(tenv, varTy, pos), pos), pos)}
+			 			{exp=T.subscriptExp(varExp, #exp(index)), ty= resolve_type (tenv, getArrayType( resolve_type(tenv, varTy, pos), pos), pos)}
 			 		end
 			 	|trvar (A.FieldVar(var, sym, pos)) = 
 			 		let val {exp=_, ty=varTy} = trvar(var)

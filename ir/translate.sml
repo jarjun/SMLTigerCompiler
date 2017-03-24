@@ -26,6 +26,7 @@ sig
 	val varDec : access * exp -> exp
 	val letBody : exp list * exp -> exp
 	val arrExp : exp * exp -> exp
+	val subscriptExp: exp * exp -> exp
 
 	val procEntryExit : {level: level, body: exp} -> unit
 	val getResult : unit -> Frame.frag list
@@ -179,8 +180,43 @@ structure Translate : TRANSLATE = struct
 	fun  letBody([], expr) = Ex(unEx(expr))
 		|letBody(initList, expr) = Ex(Tree.ESEQ(seq(map unNx initList), unEx(expr)))
 
-	fun arrExp (size, init) = Ex(Frame.externalCall("initList", [unEx(size), unEx(init)]))
+	fun arrExp (size, init) = 
+		let val arrPointer = Temp.newtemp()
 
+		in
+			Ex(Tree.ESEQ(seq[
+						Tree.MOVE(Tree.TEMP(arrPointer), Frame.externalCall("initArray", [Tree.BINOP(Tree.PLUS, unEx(size), Tree.CONST 1), unEx(init)])),
+						Tree.MOVE(Tree.MEM(Tree.TEMP(arrPointer)), unEx(size))
+						], 
+
+				Tree.TEMP(arrPointer)))
+		end
+
+	fun subscriptExp (var, index) = 
+		let val idxTemp = Temp.newtemp()
+			val varTemp = Temp.newtemp()
+
+			val nextLab = Temp.newlabel()
+			val endLab = Temp.newlabel()
+			val badLab = Temp.newlabel()
+		in
+		
+		Ex(Tree.ESEQ( seq[
+						Tree.MOVE(Tree.TEMP(idxTemp), unEx(index)),
+						Tree.MOVE(Tree.TEMP(varTemp), unEx(var)),
+						Tree.CJUMP(Tree.GE, Tree.TEMP(idxTemp), Tree.MEM(Tree.TEMP(varTemp)), badLab, nextLab),
+						Tree.LABEL(nextLab),
+						Tree.CJUMP(Tree.LT, Tree.TEMP(idxTemp), Tree.CONST(0), badLab, endLab),
+						Tree.LABEL(badLab),
+						(* TODO: print error message, array out of bounds exception *)
+						Tree.EXP(Frame.externalCall("exit", [Tree.CONST 1])),
+						Tree.LABEL(endLab)
+						],
+		
+		Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.MEM(Tree.TEMP(varTemp)), Tree.BINOP(Tree.MUL, Tree.BINOP(Tree.PLUS, Tree.TEMP(idxTemp), Tree.CONST 1), Tree.CONST Frame.wordSize)))
+		))
+
+		end
 	fun getResult() = !fragList
 
 	fun  procEntryExit({level=OUTER{...}, body}) = (ErrorMsg.error ~1 "Function declared in outer level"; ())

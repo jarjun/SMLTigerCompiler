@@ -31,10 +31,19 @@ in
 end
 */
 
-
+/*
 let var b := 3
 	type arr = array of int
-	var a := arr[10] of b
+	type arr2 = array of arr
+	var d := 4
+	var a := arr2[10+5] of arr[10*d] of b
 	function bingo():int = b
 
-in a end
+in a[1][b] end
+*/
+
+
+let type arr = array of int
+	var a := arr[10*5] of 5
+
+in a[-1] end

@@ -73,7 +73,7 @@ struct
 	 	|sameType(tenv, pos, Types.RECORD(typ1, refr1), Types.NIL) = true
 	 	|sameType(tenv, pos, Types.NIL, Types.RECORD(typ2, refr2)) = true
 
-	    |sameType(tenv, pos, type1:ty, type2:ty) = (resolve_type(tenv, type1, pos) = resolve_type(tenv, type2, pos)) (*TODO: actually deal with types here: records?*)
+	    |sameType(tenv, pos, type1:ty, type2:ty) = (resolve_type(tenv, type1, pos) = resolve_type(tenv, type2, pos)) 
 
 	fun getArrayType(Types.ARRAY(t, r), pos) = t
 	 	|getArrayType(_, pos) = (ErrorMsg.error pos "error: array not of array type"; Types.INT)
@@ -200,7 +200,7 @@ struct
 							 			        |[]       => ErrorMsg.error pos ("error: paramter error for " ^ Symbol.name(sym))
 							 			        |_        => ErrorMsg.error pos "error: record parameter matches multiple fields"
 
-							 	end *)
+							 	end *) (*relic of trying to actually make Tiger reasonable*)
 
 					in 
 						case arrRes of Types.RECORD(symlist, uniq) => compareFields(resolveFields, symlist)
@@ -282,9 +282,9 @@ struct
 				|trexp(A.NilExp) = {exp=T.nilExp(), ty=Types.NIL} 
 
 
-			 and trvar (A.SimpleVar(id, pos)) = (* nonexhaustive *)
+			 and trvar (A.SimpleVar(id, pos)) = 
 			 	   (case Symbol.look(venv, id) 
-			 	   	of SOME(Env.VarEntry{access, ty}) => {exp=T.simpleVar(access, level), ty=resolve_type(tenv,ty,pos)}  (* TODO: deal w/ actual_ty *)
+			 	   	of SOME(Env.VarEntry{access, ty}) => {exp=T.simpleVar(access, level), ty=resolve_type(tenv,ty,pos)} 
 			 	   	 | SOME(Env.FunEntry{...}) => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=T.nilExp(), ty=Types.INT})
 			 	   	 | NONE                 => (ErrorMsg.error pos ("error: undefined variable " ^ Symbol.name id); {exp=T.nilExp(), ty=Types.INT}))
 
@@ -347,7 +347,7 @@ struct
 		   			in 
 		   				if sameType(tenv, pos, actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
 		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=acc, ty=typ}), initList=initList} 
-		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv, initList=initList @ [T.varDec(acc, exp)]}) (* TODO not adding to symbol table? *)
+		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv, initList=initList @ [T.varDec(acc, exp)]}) 
 		   			end 
 
 		   		  |trdec (A.TypeDec(declist), {venv, tenv, initList}) = 
@@ -475,14 +475,14 @@ struct
 
 
 					  	fun addFunctionToVenv(venv, tenv, {name, params, body, pos, result=SOME(rt, posi)}) = 
-					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) (* TODO all params are true now *)
+					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) 
 					  				val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
 					  			in
 					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = actual_ty(tenv, rt, pos)}), tenv=tenv, initList=initList}
 					  			end
 
 					  	   |addFunctionToVenv(venv, tenv, {name, params, body, pos, result=NONE}) = 
-					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) (* TODO all params are true now *)
+					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) 
 					  				val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
 					  			in
 					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = Types.UNIT}), tenv=tenv, initList=initList}

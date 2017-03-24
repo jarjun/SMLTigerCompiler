@@ -30,6 +30,10 @@ sig
 	val recordExp : exp list -> exp
 	val fieldVar : exp * int -> exp
 	val assignExp : exp * exp -> exp
+	val whileExp : exp * exp * Temp.label -> exp
+
+	val breakExp: Temp.label option -> exp
+
 
 	val procEntryExit : {level: level, body: exp} -> unit
 	val getResult : unit -> Frame.frag list
@@ -248,6 +252,24 @@ structure Translate : TRANSLATE = struct
 	fun fieldVar (recPointer, num) = Ex(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.MEM(unEx(recPointer)), Tree.CONST(num*Frame.wordSize))))
 
 	fun assignExp (var, value) = Nx(Tree.MOVE(unEx(var), unEx(value)))
+
+
+	fun whileExp (test, body, endLab) = 
+		let val L1 = Temp.newlabel()
+			val L2 = Temp.newlabel()
+		in
+			Nx(seq[ Tree.JUMP(Tree.NAME(L1), [L1]),
+				 Tree.LABEL(L2),
+				 unNx(body),
+				 Tree.LABEL(L1),
+				 unCx(test)(L2, endLab),
+				 Tree.LABEL(endLab)
+			])
+		end
+
+
+	fun breakExp(SOME(breakLabel)) = Nx(Tree.JUMP(Tree.NAME(breakLabel), [breakLabel]))
+	   |breakExp(NONE) = Nx(Tree.EXP(Tree.CONST 0))
 
 	fun getResult() = !fragList
 

@@ -90,7 +90,7 @@ struct
 										  					  |SOME(_)				  => false
 										  					  |NONE 				  => false
 
-	fun transExp(venv, tenv, exp, level) = 
+	fun transExp(venv, tenv, exp, level, nearestDone) = 
 		let fun 
 
 				(* Normal arithmetic, two ints needed *)
@@ -146,8 +146,8 @@ struct
 				(* others *)
 				|trexp (A.LetExp{decs, body, pos}) =
 				    let val {venv=venv', tenv=tenv', initList=initList'} = 
-				  		transDecs(venv, tenv, decs, level)
-				  		val {exp=exp', ty=ty'} = transExp(venv', tenv', body, level)
+				  		transDecs(venv, tenv, decs, level, nearestDone)
+				  		val {exp=exp', ty=ty'} = transExp(venv', tenv', body, level, nearestDone)
 				  	in 	{exp=T.letBody(initList', exp'), ty=ty'}
 				  	end
 
@@ -230,17 +230,22 @@ struct
 					loopDepth := !loopDepth+1;
 					let val newVenv = Symbol.enter(venv, var, Env.VarEntry{access=T.allocLocal(level)(!escape), ty=Types.INT})
 					in
-						if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, level)), Types.UNIT)
+						if sameType(tenv, pos, #ty(transExp(newVenv, tenv, body, level, nearestDone)), Types.UNIT) (* CHANGE DONE LABEL *)
 						then (loopDepth := !loopDepth-1; {exp=T.nilExp(), ty=Types.UNIT})
 						else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: for loop body must return unit"; {exp=T.nilExp(), ty=Types.INT})
 					end)
 
 				|trexp (A.WhileExp{test, body, pos}) =
-					(checkInt(trexp test, pos);
-					loopDepth := !loopDepth+1;
-					if sameType(tenv, pos, #ty(transExp(venv, tenv, body, level)), Types.UNIT)
-					then (loopDepth := !loopDepth-1; {exp=T.nilExp(), ty=Types.UNIT})
-					else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: while loop body must return unit"; {exp=T.nilExp(), ty=Types.INT}))
+					let val newBreakLabel = (loopDepth := !loopDepth+1; Temp.newlabel())
+						val {exp=expBody, ty=tyBody} = transExp(venv, tenv, body, level, SOME(newBreakLabel)) (* CHANGE DONE LABEL *)
+						val {exp=expTest, ty=tyTest} = transExp(venv, tenv, test, level, nearestDone)
+					in
+						(checkInt( {exp=expTest, ty=tyTest} , pos);
+						
+						if sameType(tenv, pos, tyBody, Types.UNIT)
+						then (loopDepth := !loopDepth-1; {exp=T.whileExp(expTest, expBody, newBreakLabel), ty=Types.UNIT})
+						else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: while loop body must return unit"; {exp=T.nilExp(), ty=Types.INT}))
+					end
 
 				|trexp (A.IfExp{test, then', else', pos}) = 
 					(checkInt(trexp test, pos);
@@ -272,7 +277,7 @@ struct
 					(if !loopDepth < 0
 					then ErrorMsg.error pos "error: loop depth negative, this should never happen" else ();
 					if !loopDepth > 0
-					then {exp=T.nilExp(), ty=Types.UNIT}
+					then {exp=T.breakExp(nearestDone), ty=Types.UNIT}
 					else (ErrorMsg.error pos "error: break expression outside of a loop";  {exp=T.nilExp(), ty=Types.UNIT}))
 
 
@@ -330,11 +335,11 @@ struct
 
 		in trexp(exp) end
 
-	and transDecs(venv, tenv, [], level) = {venv=venv, tenv=tenv, initList = []}
-	   |transDecs(venv, tenv, decs, level) = 
+	and transDecs(venv, tenv, [], level, nearestDone) = {venv=venv, tenv=tenv, initList = []}
+	   |transDecs(venv, tenv, decs, level, nearestDone) = 
 
 		   let fun trdec (A.VarDec{name, typ=NONE, init, escape, pos}, {venv, tenv, initList}) = 
-		   			let val {exp, ty=typ} = transExp(venv, tenv, init, level)
+		   			let val {exp, ty=typ} = transExp(venv, tenv, init, level, nearestDone)
 		   				val acc = T.allocLocal(level)(!escape)
 		   			in if typ = Types.NIL 
 					   then (ErrorMsg.error pos "error: must specify record type to assign variable to nil"; {tenv=tenv, venv=venv, initList=initList})
@@ -342,7 +347,7 @@ struct
 		   			end
 
 		   		  |trdec (A.VarDec{name, typ=SOME((declaredType,tyPos)), init, escape, pos}, {venv, tenv, initList}) =
-		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init, level)
+		   		  	let val {exp, ty=typ} = transExp(venv, tenv, init, level, nearestDone)
 		   				val acc = T.allocLocal(level)(!escape)
 		   			in 
 		   				if sameType(tenv, pos, actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
@@ -442,7 +447,7 @@ struct
 							  		in
 							  			foldl putIntoNewVenv venv combined
 							  		end
-							  		val {exp=exp', ty=ty'} = transExp(newVenv, tenv, body, newLevelFromVenv)
+							  		val {exp=exp', ty=ty'} = transExp(newVenv, tenv, body, newLevelFromVenv, NONE) (* TODO figure out if this NONE break label is right *)
 							  	in 
 							  		if sameType(tenv, pos, ty', actual_ty(tenv, rt, pos)) (* need new level here *)
 							  		then (T.procEntryExit({level=newLevelFromVenv, body=exp'});
@@ -465,7 +470,7 @@ struct
 							  		in
 							  			foldl putIntoNewVenv venv combined
 							  		end
-							  		val {exp=exp', ty=ty'} = transExp(newVenv, tenv, body, newLevelFromVenv)
+							  		val {exp=exp', ty=ty'} = transExp(newVenv, tenv, body, newLevelFromVenv, NONE)
 							  	in 
 							  		if sameType(tenv, pos, ty', Types.UNIT) (* need new level here *)
 							  		then (T.procEntryExit({level=newLevelFromVenv, body=exp'});
@@ -526,7 +531,7 @@ struct
 
 	fun transProg(expr) = let val curLevel = T.newLevel({parent=T.outermost, name=Temp.newlabel(), formals=[]})
 							  val _ = FE.findEscape(expr)
-							  val final = #exp(transExp(Env.base_venv, Env.base_tenv, expr, curLevel))
+							  val final = #exp(transExp(Env.base_venv, Env.base_tenv, expr, curLevel, NONE))
 							  val _ = T.procEntryExit({level=curLevel, body=final})
 							  val finalFrags = T.getResult()
 						  in 

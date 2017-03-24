@@ -58,9 +58,20 @@ in a.b.n
 end
 */
 
+/*
 let type rec = {a:int, b:int, c:int}
 	var a := rec{a=5, b= 9, c=13 }
 	function test():rec = a
 in
 	a.c := 7
 end
+*/
+
+let var a := 1
+	/* function abc():int = 9 */
+in 
+while a<10 do 
+	while 1+1 do break
+end
+
+

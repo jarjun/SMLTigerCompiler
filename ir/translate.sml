@@ -25,6 +25,7 @@ sig
 	val simpleVar : access * level -> exp
 	val varDec : access * exp -> exp
 	val letBody : exp list * exp -> exp
+	val arrExp : exp * exp -> exp
 
 	val procEntryExit : {level: level, body: exp} -> unit
 	val getResult : unit -> Frame.frag list
@@ -177,6 +178,8 @@ structure Translate : TRANSLATE = struct
 
 	fun  letBody([], expr) = Ex(unEx(expr))
 		|letBody(initList, expr) = Ex(Tree.ESEQ(seq(map unNx initList), unEx(expr)))
+
+	fun arrExp (size, init) = Ex(Frame.externalCall("initList", [unEx(size), unEx(init)]))
 
 	fun getResult() = !fragList
 

@@ -12,7 +12,7 @@ in end
 
 /* if 7=4 then 3=5 else 1+3 */
 
-
+/*
 let var a := 3
 	var b := 7
 	var q := 5
@@ -29,3 +29,12 @@ let var a := 3
 in
 	q + b
 end
+*/
+
+
+let var b := 3
+	type arr = array of int
+	var a := arr[10] of b
+	function bingo():int = b
+
+in a end

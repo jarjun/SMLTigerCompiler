@@ -161,13 +161,17 @@ struct
 
 
 				|trexp(A.ArrayExp{typ=typ, size=siz, init=initial, pos=pos}) = 
-					(
-					checkInt(trexp siz, pos);
-					if sameType(tenv, pos, #ty (trexp(initial))  , 
-								 		   resolve_type(tenv, getArrayType(actual_ty(tenv, typ, pos), pos), pos))
-							then () else ErrorMsg.error pos "error: array initial value type mismatch";
+					let val {exp=initExp, ty=initTy} = trexp(initial)
+						val {exp=sizeExp, ty=sizeTy} = trexp(siz)
+					in
+						checkInt({exp=sizeExp, ty=sizeTy}, pos);
+						(if sameType(tenv, pos, initTy  , 
+							 		   resolve_type(tenv, getArrayType(actual_ty(tenv, typ, pos), pos), pos))
+						then () 
+						else ErrorMsg.error pos "error: array initial value type mismatch");
+						{exp=T.arrExp(sizeExp, initExp), ty = actual_ty(tenv, typ, pos)}
+					end
 
-					{exp=T.nilExp(), ty = actual_ty(tenv, typ, pos)})
 
 				|trexp(A.RecordExp{fields=f, typ=typ, pos=pos}) = 
 					(let val symType = if isSome(Symbol.look(tenv, typ)) then  valOf(Symbol.look(tenv, typ)) else (ErrorMsg.error pos "error: undefined record type"; Types.NAME(typ, ref NONE)) (*TODO: clean this up*)

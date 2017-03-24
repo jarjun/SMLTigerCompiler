@@ -14,8 +14,8 @@ sig
 	val formals : frame -> access list
 	val allocLocal : frame -> bool -> access
 	
-(*	val externalCall : string * Tree.exp list -> Tree.exp
-	val procEntryExit1 : frame -> Tree.stm -> Tree.stm*)
+	val externalCall : string * Tree.exp list -> Tree.exp
+(*	val procEntryExit1 : frame -> Tree.stm -> Tree.stm*)
 
 	datatype frag = PROC of {body: Tree.stm, frame: frame}
 				   |STRING of Temp.label * string

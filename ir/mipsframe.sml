@@ -12,7 +12,7 @@ structure MipsFrame : FRAME = struct
 
 	type frame = {name: Temp.label, formals: access list, numFrameLocals: int ref}
 
-	
+
 	datatype frag = PROC of {body: Tree.stm, frame: frame}
 				   |STRING of Temp.label * string
 
@@ -51,7 +51,7 @@ structure MipsFrame : FRAME = struct
 	   |exp (InReg(k)) (fp) = Tree.TEMP(k)
 (*	   |exp (_)(_) = (print("FP not given in frame exp"); Tree.CONST(0))*)
 
-
+	fun externalCall(str, expList) = Tree.CALL(Tree.NAME(Temp.namedlabel(str)), expList)
 
 
 

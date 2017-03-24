@@ -152,11 +152,13 @@ struct
 				  	end
 
 				|trexp (A.SeqExp (explist)) =
-					let fun checkSeq [] = {exp=T.nilExp(), ty=Types.UNIT}
+					let (*fun checkSeq [] = {exp=T.nilExp(), ty=Types.UNIT}
 						   |checkSeq [(exp, pos)] = trexp(exp)
-						   |checkSeq ((exp, pos)::rest) = (trexp(exp); checkSeq(rest))
-					in 
-						checkSeq(explist)
+						   |checkSeq ((exp, pos)::rest) = (trexp(exp); checkSeq(rest))*)
+					
+						val exptys = map (fn(exp, pos) => trexp(exp)) explist
+					in
+						{exp=T.seqExp(map (fn x => #exp(x)) exptys), ty = if List.length(exptys) = 0 then Types.UNIT else #ty(List.last(exptys))}
 					end
 
 

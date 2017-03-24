@@ -32,8 +32,9 @@ sig
 	val assignExp : exp * exp -> exp
 	val whileExp : exp * exp * Temp.label -> exp
 	val forExp: exp * exp * exp * Temp.label -> exp
-
 	val breakExp: Temp.label option -> exp
+
+	val seqExp: exp list -> exp
 
 
 	val procEntryExit : {level: level, body: exp} -> unit
@@ -295,6 +296,18 @@ structure Translate : TRANSLATE = struct
 
 	fun breakExp(SOME(breakLabel)) = Nx(Tree.JUMP(Tree.NAME(breakLabel), [breakLabel]))
 	   |breakExp(NONE) = Nx(Tree.EXP(Tree.CONST 0))
+
+
+	fun  seqExp([]) = Nx(Tree.EXP(Tree.CONST 0))
+		|seqExp([last]) = last
+	   	|seqExp(explist) = 
+	   		let val last = List.last(explist)
+	   			val siz = List.length(explist)
+	   			val newList = List.take(explist, siz-1)
+	   		in 
+	   			Ex(Tree.ESEQ( seq( map unNx newList), unEx(last)))
+	   		end
+
 
 	fun getResult() = !fragList
 

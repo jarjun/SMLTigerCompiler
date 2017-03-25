@@ -3,12 +3,8 @@ structure A = Absyn
 structure T = Translate
 structure FE = FindEscape
 
-signature SEMANT = 
-sig
-	val transProg: A.exp -> unit
-end
 
-structure Semant : SEMANT = 
+structure Semant = 
 struct
 
 	structure Translate = struct type exp = unit end
@@ -410,8 +406,8 @@ struct
 		   				val acc = T.allocLocal(level)(!escape)
 		   			in 
 		   				if sameType(tenv, pos, actual_ty(tenv,declaredType,tyPos), resolve_type(tenv,typ,pos))
-		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=acc, ty=typ}), initList=initList} 
-		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv, initList=initList @ [T.varDec(acc, exp)]}) 
+		   				then {tenv=tenv, venv=Symbol.enter(venv, name, Env.VarEntry {access=acc, ty=typ}), initList=initList @ [T.varDec(acc, exp)]} 
+		   				else (ErrorMsg.error pos ("error: variable has incorrect type"); {tenv=tenv, venv=venv, initList=initList}) 
 		   			end 
 
 		   		  |trdec (A.TypeDec(declist), {venv, tenv, initList}) = 
@@ -597,7 +593,7 @@ struct
 							  val finalFrags = T.getResult()
 						  in 
 						  	T.printResult();
-						  	() 
+						  	finalFrags
 						  end
 
 end

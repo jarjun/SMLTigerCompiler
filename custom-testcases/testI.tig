@@ -121,6 +121,7 @@ in
 end
 */
 
+/*
 let type arr = array of int
 	var a:= arr[let function str():int = 3
 		in
@@ -133,6 +134,30 @@ in
 			3
 		end
 	  ]
+end
+*/
+
+
+let var a:= "hello"
+	function str(b:int):int = 
+		let function f(c:string):int = (sib();print(a); 7)
+		in
+			print(a);
+			5
+		end
+	function sib() = ()
+	var formattedMultiLineString := "abc\
+
+
+	\t\
+ 
+
+
+\de\
+\fg\
+\hijk"
+in
+	print(a)
 end
 
 

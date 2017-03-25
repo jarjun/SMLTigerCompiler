@@ -51,7 +51,6 @@ structure Translate : TRANSLATE = struct
 	datatype level = NORMAL of {parent: level, frame: Frame.frame, uniq: unit ref}
 					|OUTER of {uniq: unit ref}
 
-
 	datatype exp = 
 		Ex of Tree.exp 
 	   |Nx of Tree.stm
@@ -113,7 +112,7 @@ structure Translate : TRANSLATE = struct
 	fun newLevel {parent, name, formals} = 
 		let val newLev = NORMAL({  parent = parent,  frame=Frame.newFrame{name=name, formals= true::formals}, uniq = ref () })
 		in
-			printLevel(newLev);
+(*			printLevel(newLev);*)
 			newLev
 		end
 
@@ -127,11 +126,11 @@ structure Translate : TRANSLATE = struct
 		let	val newAccess = Frame.allocLocal(frame)(esc)
 			val ret = ( (NORMAL({parent=parent, frame=frame, uniq=uniq}) : level), newAccess )
 		in 
-			Frame.printAccess(newAccess);
-			printLevel((NORMAL({parent=parent, frame=frame, uniq=uniq})));
+(*			Frame.printAccess(newAccess);*)
+(*			printLevel((NORMAL({parent=parent, frame=frame, uniq=uniq})));*)
 			ret
 		end
-(*	   |allocLocal (OUTER({uniq}):level)                   (esc) = ( (ErrorMsg.error ~1 "Can't alloc variables in outermost level. How did this happen?"); (OUTER({uniq=uniq}), Frame.InFrame(0))  )  *)
+	   |allocLocal (OUTER({uniq}):level)                   (esc) = ( (ErrorMsg.error ~1 "Can't alloc variables in outermost level."); (OUTER({uniq=uniq}), Frame.allocLocal(Frame.newFrame({formals=[], name=Temp.newlabel()}))(true) )  )  
 
 
 
@@ -342,7 +341,7 @@ structure Translate : TRANSLATE = struct
 		in
 			Ex(Tree.CALL(Tree.NAME(lab), (sl)::(map (fn x => unEx x) args)))
 		end
-	   |callExp(_,_,_,_) = (ErrorMsg.error ~1 "Function declared in outer level"; Ex(Tree.CONST 0))
+	   |callExp(_,OUTER{...},lab,args) = Ex(Tree.CALL(Tree.NAME(lab), (map (fn x => unEx x) args))) (*no static link for built in function*)
 
 	fun getResult() = !fragList
 

@@ -36,7 +36,7 @@ sig
 	val stringExp: string -> exp
 
 	val seqExp: exp list -> exp
-
+	val callExp: level * level * Temp.label * exp list -> exp
 
 	val procEntryExit : {level: level, body: exp} -> unit
 	val getResult : unit -> Frame.frag list
@@ -177,8 +177,8 @@ structure Translate : TRANSLATE = struct
 
 	fun intExp x = Ex(Tree.CONST(x))
 
-	fun  findFrame(OUTER{...}, _) = (ErrorMsg.error ~1 "Variable declared in outer level"; Tree.CONST(0))
-		|findFrame(_, OUTER{...}) = (ErrorMsg.error ~1 "Can't find variable's level using static links"; Tree.CONST(0))
+	fun  findFrame(OUTER{...}, _) = (ErrorMsg.error ~1 "Declared in outer level"; Tree.CONST(0))
+		|findFrame(_, OUTER{...}) = (ErrorMsg.error ~1 "Can't find level using static links"; Tree.CONST(0))
 		|findFrame (varLevel as (NORMAL{parent=_, frame=_, uniq=uniqDec}), 
 					useLevel as (NORMAL{parent=parentUsed, frame=_ , uniq=uniqUsed})) = 
 		if uniqDec = uniqUsed
@@ -336,6 +336,13 @@ structure Translate : TRANSLATE = struct
 					Ex(Tree.NAME(lab))
 				 end
 		end
+
+	fun callExp (callLevel, NORMAL{parent , frame, uniq}, lab, args) = 
+		let val sl = findFrame(parent, callLevel)
+		in
+			Ex(Tree.CALL(Tree.NAME(lab), (sl)::(map (fn x => unEx x) args)))
+		end
+	   |callExp(_,_,_,_) = (ErrorMsg.error ~1 "Function declared in outer level"; Ex(Tree.CONST 0))
 
 	fun getResult() = !fragList
 

@@ -95,12 +95,44 @@ in
 end
 */
 
+/*
 let
 	function str():string = "abc"
 	var a := "abc"
 in
 	a = str()
 end
+*/
 
+/*
+let
+	var b := 3
+	function str(a:int):int = 
+		let function f():int = 
+			let var q := 098
+				function g():int = (q ; g())
+			in
+				g()
+			end
+		in 1232 end
+in
+	b;
+	str(9)
+end
+*/
+
+let type arr = array of int
+	var a:= arr[let function str():int = 3
+		in
+			3
+		end] of 3
+in
+	a[
+	 	let function str():int = 3
+		in
+			3
+		end
+	  ]
+end
 
 

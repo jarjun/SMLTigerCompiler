@@ -95,24 +95,40 @@ struct
 
 				(* Normal arithmetic, two ints needed *)
 				trexp (A.OpExp{left, oper=A.PlusOp, right, pos}) = 
-					  (checkInt(trexp left, pos); 
-					  checkInt(trexp right, pos);
-					  {exp=T.binop(Tree.PLUS, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
+					let val {exp=expLeft, ty=tyLeft} = trexp left
+						val {exp=expRight, ty=tyRight} = trexp right
+					in
+					  (checkInt({exp=expLeft, ty=tyLeft}, pos); 
+					  checkInt({exp=expRight, ty=tyRight}, pos);
+					  {exp=T.binop(Tree.PLUS, expLeft, expRight), ty=Types.INT})
+					end
 
 				|trexp (A.OpExp{left, oper=A.MinusOp, right, pos}) = 
-					  (checkInt(trexp left, pos); 
-					  checkInt(trexp right, pos);
-					  {exp=T.binop(Tree.MINUS, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
+					let val {exp=expLeft, ty=tyLeft} = trexp left
+						val {exp=expRight, ty=tyRight} = trexp right
+					in
+					  (checkInt({exp=expLeft, ty=tyLeft}, pos); 
+					  checkInt({exp=expRight, ty=tyRight}, pos);
+					  {exp=T.binop(Tree.MINUS, expLeft, expRight), ty=Types.INT})
+					end
 
 				|trexp (A.OpExp{left, oper=A.TimesOp, right, pos}) = 
-					  (checkInt(trexp left, pos); 
-					  checkInt(trexp right, pos);
-					  {exp=T.binop(Tree.MUL, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
+					let val {exp=expLeft, ty=tyLeft} = trexp left
+						val {exp=expRight, ty=tyRight} = trexp right
+					in
+					  (checkInt({exp=expLeft, ty=tyLeft}, pos); 
+					  checkInt({exp=expRight, ty=tyRight}, pos);
+					  {exp=T.binop(Tree.MUL, expLeft, expRight), ty=Types.INT})
+					end
 
 				|trexp (A.OpExp{left, oper=A.DivideOp, right, pos}) = 
-					  (checkInt(trexp left, pos); 
-					  checkInt(trexp right, pos);
-					  {exp=T.binop(Tree.DIV, #exp(trexp left), #exp(trexp right)), ty=Types.INT})
+					let val {exp=expLeft, ty=tyLeft} = trexp left
+						val {exp=expRight, ty=tyRight} = trexp right
+					in
+					  (checkInt({exp=expLeft, ty=tyLeft}, pos); 
+					  checkInt({exp=expRight, ty=tyRight}, pos);
+					  {exp=T.binop(Tree.DIV, expLeft, expRight), ty=Types.INT})
+					end
 
 
 				(* Comparing operations, ints or strings needed *)
@@ -238,16 +254,16 @@ struct
 
 				|trexp (A.VarExp(var)) = trvar(var)
 				|trexp (A.CallExp{func, args, pos}) = 
-					let val Env.FunEntry{level, label, formals, result} = case Symbol.look(venv, func) of SOME(Env.FunEntry{level, label, formals, result}) => valOf(Symbol.look(venv, func))
+					let val Env.FunEntry{level = funLevel, label, formals, result} = case Symbol.look(venv, func) of SOME(Env.FunEntry{level=funLevel, label, formals, result}) => valOf(Symbol.look(venv, func))
 														 |SOME(Env.VarEntry{access, ty})			  => ((ErrorMsg.error pos "error: this is a variable, not a function"); Env.FunEntry{level=level, label=Temp.newlabel(), formals = [], result=Types.UNIT})
 														 |_ 							  => ((ErrorMsg.error pos "error: undefined function"); Env.FunEntry{level=level, label=Temp.newlabel(), formals = [], result=Types.UNIT})
-
-						fun compareParams(formal, idx) = (if sameType(tenv, pos, resolve_type(tenv, formal, pos), resolve_type(tenv, (#ty(trexp(List.nth(args, idx)))), pos )) then () else ErrorMsg.error pos "error: parameter mismatch" ; idx+1)    	
+						val exptyList = map (fn x => trexp x) args
+						fun compareParams(formal, idx) = (if sameType(tenv, pos, resolve_type(tenv, formal, pos), resolve_type(tenv, #ty(List.nth(exptyList, idx)), pos )) then () else ErrorMsg.error pos "error: parameter mismatch" ; idx+1)    	
 
 
 					in 
 						if List.length(formals) = List.length(args) then (foldl compareParams 0 formals) else (ErrorMsg.error pos "error: incorrect number of arguments"; 0);
-						{exp=T.nilExp(), ty=resolve_type(tenv, result, pos)} 
+						{exp=T.callExp(level, funLevel, label, map (fn x => #exp(x) ) exptyList), ty=resolve_type(tenv, result, pos)} 
 					end
 
 				|trexp (A.ForExp{var, escape, lo, hi, body, pos}) = 
@@ -281,19 +297,29 @@ struct
 					end
 
 				|trexp (A.IfExp{test, then', else', pos}) = 
-					(checkInt(trexp test, pos);
-					if isSome(else')
-					then 
-						(if sameType(tenv, pos, resolve_type(tenv, #ty(trexp then'), pos), resolve_type(tenv, #ty(trexp (valOf(else'))), pos))
-						then ()
-						else ErrorMsg.error pos "error: branches don't have matching return type";
-						{exp=T.ifElse(#exp(trexp test), #exp(trexp then'), #exp(trexp (valOf(else')))), ty=resolve_type(tenv, #ty(trexp then'), pos)})
-					else 
-						(if sameType(tenv, pos, resolve_type(tenv, #ty(trexp then'), pos), Types.UNIT)
-						then ()
-						else ErrorMsg.error pos "error: then clause must evaluate to UNIT";
-						{exp=T.ifThen(#exp(trexp test), #exp(trexp then')), ty=Types.UNIT})
-					)
+					let val {exp=expTest, ty=tyTest} =trexp test
+					in
+						(checkInt({exp=expTest, ty=tyTest}, pos);
+						if isSome(else')
+						then 
+							let val {exp=expThen, ty=tyThen} = trexp then'
+								val {exp=expElse, ty=tyElse} = trexp (valOf(else'))
+							in
+								(if sameType(tenv, pos, resolve_type(tenv, tyThen, pos), resolve_type(tenv, tyElse, pos))
+								then ()
+								else ErrorMsg.error pos "error: branches don't have matching return type";
+								{exp=T.ifElse(expTest, expThen, expElse), ty=resolve_type(tenv, tyThen, pos)})
+							end
+						else 
+							let val {exp=expThen, ty=tyThen} = trexp then'
+							in 
+								(if sameType(tenv, pos, resolve_type(tenv, tyThen, pos), Types.UNIT)
+								then ()
+								else ErrorMsg.error pos "error: then clause must evaluate to UNIT";
+								{exp=T.ifThen(expTest, expThen), ty=Types.UNIT})
+							end
+						)
+					end
 
 
 
@@ -513,17 +539,19 @@ struct
 
 
 					  	fun addFunctionToVenv(venv, tenv, {name, params, body, pos, result=SOME(rt, posi)}) = 
-					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) 
+					  			let val levelName = Temp.newlabel()
+					  				val newLevel = T.newLevel({parent=level, name=levelName, formals= map (fn {name, escape, typ, pos} => !escape) params}) 
 					  				val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
 					  			in
-					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = actual_ty(tenv, rt, pos)}), tenv=tenv, initList=initList}
+					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = levelName, formals = paramTys, result = actual_ty(tenv, rt, pos)}), tenv=tenv, initList=initList}
 					  			end
 
 					  	   |addFunctionToVenv(venv, tenv, {name, params, body, pos, result=NONE}) = 
-					  			let val newLevel = T.newLevel({parent=level, name=Temp.newlabel(), formals= map (fn {name, escape, typ, pos} => !escape) params}) 
+					  			let val levelName = Temp.newlabel()
+					  				val newLevel = T.newLevel({parent=level, name=levelName, formals= map (fn {name, escape, typ, pos} => !escape) params}) 
 					  				val paramTys = map (fn {name, escape, typ=sym, pos} => actual_ty(tenv, sym, pos)) params
 					  			in
-					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = Temp.newlabel(), formals = paramTys, result = Types.UNIT}), tenv=tenv, initList=initList}
+					  				{venv = Symbol.enter(venv, name, Env.FunEntry{level = newLevel, label = levelName, formals = paramTys, result = Types.UNIT}), tenv=tenv, initList=initList}
 					  			end
 
 

@@ -21,6 +21,9 @@ temp.sml
 printtree.sml
 translate.sml
 findescape.sml
+assem.sml
+canon.sml
+mipsgen.sml
 $/smlnj-lib.cm
 $/ml-yacc-lib.cm
 $/basis.cm

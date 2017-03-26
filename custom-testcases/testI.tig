@@ -137,7 +137,7 @@ in
 end
 */
 
-
+/*
 let var a:= "hello"
 	function str(b:int):int = 
 		let function f(c:string):int = (sib();print(a); 7)
@@ -159,5 +159,12 @@ let var a:= "hello"
 in
 	print(a)
 end
+*/
 
+let type rec = {a:int}
+	var b:= rec{a=5}
+	var c:= rec{a=5}
+in
+b=c
+end
 

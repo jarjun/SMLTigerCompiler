@@ -1,0 +1,10 @@
+/*
+let
+	function a():int = 1
+	function b():int = 2
+in
+a() + b()
+end
+*/
+
+2+3+4

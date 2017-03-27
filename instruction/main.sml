@@ -9,16 +9,18 @@ structure Main = struct
    fun emitproc out (F.PROC{body,frame}) =
      let val _ = print ("emit " ^ Symbol.name(Frame.name frame) ^ "\n")
 (*         val _ = Printtree.printtree(out,body); *)
-	 val stms = Canon.linearize body
+	       val stms = Canon.linearize body
 (*         val _ = app (fn s => Printtree.printtree(out,s)) stms; *)
          val stms' = Canon.traceSchedule(Canon.basicBlocks stms)
-         val _ = app (fn s => Printtree.printtree(out,s)) stms';
-	 val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
+         val _ = (app (fn s => Printtree.printtree(out,s)) stms'; TextIO.output(out, "\n"))
+
+      	 val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
+
          val format0 = Assem.format(Temp.makestring)
       in  app (fn i => TextIO.output(out,format0 i)) instrs
      end
 
-    | emitproc out (F.STRING(lab,s)) = TextIO.output(out,(Symbol.name(lab) ^ ":" ^ s ))
+    | emitproc out (F.STRING(lab,s)) = TextIO.output(out,(Symbol.name(lab) ^ ":" ^ s ^ "\n"))
 
    fun withOpenFile fname f = 
        let val out = TextIO.openOut fname

@@ -161,10 +161,12 @@ in
 end
 */
 
+
 let type rec = {a:int}
 	var b:= rec{a=5}
 	var c:= rec{a=5}
 in
 b=c
 end
+
 

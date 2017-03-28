@@ -4,7 +4,8 @@ sig
 	type access
 
 	val FP : Temp.temp
-	val RV : Temp.temp
+	val V0 : Temp.temp
+
 	val wordSize : int
 
 	val exp : access -> Tree.exp -> Tree.exp 
@@ -16,6 +17,8 @@ sig
 	
 	val externalCall : string * Tree.exp list -> Tree.exp
 (*	val procEntryExit1 : frame -> Tree.stm -> Tree.stm*)
+	val procEntryExit2 : frame * Assem.instr list -> Assem.instr list
+(*	val procEntryExit3 : frame * Assem.instr list -> {prolog:string, body: Assem.instr list, epilog: string}*)
 
 	datatype frag = PROC of {body: Tree.stm, frame: frame}
 				   |STRING of Temp.label * string

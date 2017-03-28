@@ -24,23 +24,79 @@ struct
 					t 
 				end
 
+			fun binopToString(Tree.PLUS) = "add"
+			   |binopToString(Tree.MINUS) = "sub"
+			   |binopToString(Tree.MUL) = "mul"
+			   |binopToString(Tree.DIV) = "div"
+
+			fun relopToString(Tree.EQ) = "beq"
+			   |relopToString(Tree.NE) = "bne"
+			   |relopToString(Tree.LT) = "blt"
+			   |relopToString(Tree.LE) = "ble"
+			   |relopToString(Tree.GT) = "bgt"
+			   |relopToString(Tree.GE) = "bge"
+
 			fun munchStm (Tree.SEQ(a,b)) = (munchStm a; munchStm b)
+			   |munchStm (Tree.CJUMP(relop, e1, e2, l1, l2)) = emit (As.OPER{
+			   													assem=relopToString(relop) ^ " `s0, `s1, " ^ Symbol.name(l1) ^ " \n",
+																src=[munchExp e1, munchExp e2], dst=[], jump=SOME([l1, l2])})
+
+			   |munchStm (Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, e1, Tree.CONST(i))), e2)) = emit (As.OPER{
+			   													assem="sw `s0, " ^ Int.toString(i) ^ "(`s1) \n",
+																src=[munchExp e2, munchExp e1], dst=[], jump=NONE})
+
+			   |munchStm (Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.CONST(i), e1)), e2)) = emit (As.OPER{
+			   													assem="sw `s0, " ^ Int.toString(i) ^ "(`s1) \n",
+																src=[munchExp e2, munchExp e1], dst=[], jump=NONE})
+
+			   |munchStm (Tree.MOVE(Tree.MEM(e1), e2)) = emit (As.OPER{
+			   													assem="sw `s0, 0(`s1) \n",
+																src=[munchExp e2, munchExp e1], dst=[], jump=NONE})
+
 			   |munchStm (Tree.JUMP(Tree.NAME l, q)) = emit (As.OPER{
 			   													assem="j " ^ Symbol.name(l) ^ "\n",
 																src=[], dst=[], jump=SOME(q)})
+
 			   |munchStm (Tree.MOVE (Tree.TEMP t, e2)) = emit (As.MOVE{
-			   														assem="move `d0 `s0\n",
+			   														assem="move `d0, `s0\n",
 																	src=munchExp e2, dst=t})
+
 			   |munchStm (Tree.LABEL lab) = emit (As.LABEL{assem=Symbol.name(lab) ^ ":\n",
 			   											lab=lab})
+
+(*			   |munchStm(_) = ()*)
 			  
-			and munchExp (Tree.BINOP(Tree.PLUS, e1, e2)) = result (fn r => emit (As.OPER{
-																					assem="add `d0, `s0, `s1\n",
+			and munchExp (Tree.MEM(Tree.BINOP(Tree.PLUS, e1, Tree.CONST(i)))) = result (fn r => emit (As.OPER{
+																					assem="lw `d0, " ^ Int.toString(i) ^ "(`s0)\n",
+																					src=[munchExp e1], dst=[r], jump=NONE }))
+
+			   |munchExp (Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.CONST(i), e1))) = result (fn r => emit (As.OPER{
+																					assem="lw `d0, " ^ Int.toString(i) ^ "(`s0)\n",
+																					src=[munchExp e1], dst=[r], jump=NONE }))
+
+			   |munchExp (Tree.MEM(e1)) = result (fn r => emit (As.OPER{
+																					assem="lw `d0, 0(`s0)\n",
+																					src=[munchExp e1], dst=[r], jump=NONE }))
+
+			   |munchExp (Tree.BINOP(Tree.PLUS, e1, Tree.CONST(i))) = result (fn r => emit (As.OPER{
+																					assem="addi `d0, `s0, " ^ Int.toString(i) ^ "\n",
+																					src=[munchExp e1], dst=[r], jump=NONE }))
+
+			   |munchExp (Tree.BINOP(Tree.PLUS, Tree.CONST(i), e1)) = result (fn r => emit (As.OPER{
+																					assem="addi `d0, `s0, " ^ Int.toString(i) ^ "\n",
+																					src=[munchExp e1], dst=[r], jump=NONE }))
+
+			   |munchExp (Tree.BINOP(binop, e1, e2)) = result (fn r => emit (As.OPER{
+																					assem=binopToString(binop) ^ " `d0, `s0, `s1\n",
 																					src=[munchExp e1, munchExp e2], dst=[r], jump=NONE }))
+
 			   |munchExp (Tree.CONST i) = result (fn r => emit (As.OPER{
 			   														assem="li `d0, " ^ Int.toString(i) ^ "\n",
 																	src=[], dst=[r], jump=NONE}))
+
 			   |munchExp (Tree.TEMP t) = t
+
+(*			   |munchExp(_) = Temp.newtemp()*)
 
 		in
 			munchStm stm;

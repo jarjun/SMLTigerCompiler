@@ -17,7 +17,9 @@ structure Main = struct
       	 val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
 
          val format0 = Assem.format(Temp.makestring)
-      in  app (fn i => TextIO.output(out,format0 i)) instrs
+      in  app (fn i => TextIO.output(out,format0 i)) instrs;
+          TextIO.output(out, "---------------------\n")
+
      end
 
     | emitproc out (F.STRING(lab,s)) = TextIO.output(out,(Symbol.name(lab) ^ ":" ^ s ^ "\n"))

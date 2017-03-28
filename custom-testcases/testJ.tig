@@ -7,4 +7,19 @@ a() + b()
 end
 */
 
-2+3+4
+/*
+let var a := 3
+	function f():int = 
+		let function g():int = a
+		in a end
+in 
+	a+5
+end
+*/
+
+let var a := 3
+	function f():int = a
+in 
+	if 9 >= a then (a:=5;());
+	a
+end

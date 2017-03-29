@@ -5,6 +5,7 @@ sig
 
 	val FP : Temp.temp
 	val V0 : Temp.temp
+	val SP : Temp.temp
 
 	val wordSize : int
 
@@ -16,7 +17,8 @@ sig
 	val allocLocal : frame -> bool -> access
 	
 	val externalCall : string * Tree.exp list -> Tree.exp
-(*	val procEntryExit1 : frame -> Tree.stm -> Tree.stm*)
+	(*val procEntryExit1 : frame -> Tree.stm -> Tree.stm*)
+	
 	val procEntryExit2 : frame * Assem.instr list -> Assem.instr list
 (*	val procEntryExit3 : frame * Assem.instr list -> {prolog:string, body: Assem.instr list, epilog: string}*)
 
@@ -26,5 +28,11 @@ sig
 	
 	val printFrame : frame -> unit
 	val printAccess : access -> unit
+
+	val getCallerSaves: unit -> Temp.temp list
+	val getCalleeSaves: unit -> Temp.temp list
+	val getArgTemps: unit -> Temp.temp list
+	val getReturnRegisters: unit -> Temp.temp list
+	val getReturnAddress: unit -> Temp.temp
 	
 end

@@ -10,8 +10,13 @@ structure Main = struct
      let val _ = print ("emit " ^ Symbol.name(Frame.name frame) ^ "\n")
 (*         val _ = Printtree.printtree(out,body); *)
 	       val stms = Canon.linearize body
-(*         val _ = app (fn s => Printtree.printtree(out,s)) stms; *)
+
+(*         val _ = TextIO.output(out, "BEFORE TRACE\n")
+         
+         val _ = app (fn s => Printtree.printtree(out,s)) stms; *)
          val stms' = Canon.traceSchedule(Canon.basicBlocks stms)
+
+         (*val _ = TextIO.output(out, "AFTER TRACE\n")*)
          val _ = (app (fn s => Printtree.printtree(out,s)) stms'; TextIO.output(out, "\n"))
 
       	 val instrs =   List.concat(map (MipsGen.codegen frame) stms') 

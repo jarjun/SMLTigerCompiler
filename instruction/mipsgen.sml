@@ -41,6 +41,8 @@ struct
 									  else Int.toString(i)
 
 			fun munchStm (Tree.SEQ(a,b)) = (munchStm a; munchStm b)
+
+
 			   |munchStm (Tree.CJUMP(relop, e1, e2, l1, l2)) = emit (As.OPER{
 			   													assem=relopToString(relop) ^ " `s0, `s1, " ^ Symbol.name(l1) ^ " \n",
 																src=[munchExp e1, munchExp e2], dst=[], jump=SOME([l1, l2])})
@@ -68,9 +70,18 @@ struct
 			   |munchStm (Tree.LABEL lab) = emit (As.LABEL{assem=Symbol.name(lab) ^ ":\n",
 			   											lab=lab})
 
+			   |munchStm (Tree.EXP(e1)) = (munchExp(e1); ())
+
 (*			   |munchStm(_) = ()*)
 			  
-			and munchExp (Tree.MEM(Tree.BINOP(Tree.PLUS, e1, Tree.CONST(i)))) = result (fn r => emit (As.OPER{
+			and munchExp(Tree.CALL(Tree.NAME(n), args)) = result(fn r => emit(As.OPER{
+			   											  assem="jal " ^ Symbol.name(n) ^ "\n",
+			   											  src=munchArgs(0, args),
+			   											  dst= Frame.getCallerSaves() @ Frame.getReturnRegisters() @ [Frame.getReturnAddress()],
+			   											  jump=NONE}))
+
+
+			   |munchExp (Tree.MEM(Tree.BINOP(Tree.PLUS, e1, Tree.CONST(i)))) = result (fn r => emit (As.OPER{
 																					assem="lw `d0, " ^ properIntToString(i) ^ "(`s0)\n",
 																					src=[munchExp e1], dst=[r], jump=NONE }))
 
@@ -101,6 +112,8 @@ struct
 			   |munchExp (Tree.TEMP t) = t
 
 (*			   |munchExp(_) = Temp.newtemp()*)
+		
+		and munchArgs(idx, args) = [] (* just adds first 4 into regs, rest onto stack*)
 
 		in
 			munchStm stm;

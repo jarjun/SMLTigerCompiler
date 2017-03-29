@@ -42,10 +42,10 @@ structure MipsFrame : FRAME = struct
 	val wordSize = 4
 	val numArgRegs = 4
 
-	val callersaves = [T0, T1, T2, T3, T4, T5, T6, T7, T8, T9]
-	val calleesaves = [S0, S1, S2, S3, S4, S5, S6, S7]
-	val args = [A0, A1, A2, A3]
-	val reserved = [ZERO, AT, V0, V1, K0, K1, GP, SP, FP, RA]
+	val callersaves = [(T0, "$t0"), (T1, "$t1"), (T2, "$t2"), (T3, "$t3"), (T4, "$t4"), (T5, "$t5"), (T6, "$t6"), (T7, "$t7"), (T8, "$t8"), (T9, "$t9")]
+	val calleesaves = [(S0, "$s0"), (S1, "$s1"), (S2, "$s2"), (S3, "$s3"), (S4, "$s4"), (S5, "$s5"), (S6, "$s6"), (S7, "$s7")]
+	val args = [(A0, "$a0"), (A1, "$a1"), (A2, "$a2"), (A3, "$a3")]
+	val reserved = [(ZERO, "$r0"), (AT, "$at"), (V0, "$v0"), (V1, "$v1"), (K0, "$k0"), (K1, "$k1"), (GP, "$gp"), (SP, "$sp"), (FP, "$fp"), (RA, "$ra")]
 
 	datatype access = InFrame of int | InReg of Temp.temp
 
@@ -93,12 +93,19 @@ structure MipsFrame : FRAME = struct
 	fun externalCall(str, expList) = Tree.CALL(Tree.NAME(Temp.namedlabel(str)), expList)
 
 
+    (* TODO procEntryExit1 does label, moves args to where the callee expects them, more? *)
 
-	fun procEntryExit2 (frame, body) = body @ [Assem.OPER{assem="",
-														  src=(reserved @ calleesaves),
+	fun procEntryExit2 (frame:frame, body) = body @ [Assem.OPER{assem="",
+														  src=((map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves)),
 														  dst=[], jump=SOME([])}]
 
 
+
+	fun getCallerSaves() = map (fn (a,b) => a) callersaves
+	fun getCalleeSaves() = map (fn (a,b) => a) calleesaves
+	fun getArgTemps() = map (fn (a,b) => a) args
+	fun getReturnRegisters() = [V0, V1]
+	fun getReturnAddress() = RA
 
 
 end

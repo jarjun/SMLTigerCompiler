@@ -586,7 +586,7 @@ struct
 		   	in foldl trdec {venv=venv, tenv=tenv, initList=[]} decs
 		   	end
 
-	fun transProg(expr) = let val curLevel = T.newLevel({parent=T.outermost, name=Temp.newlabel(), formals=[]})
+	fun transProg(expr) = let val curLevel = T.newLevel({parent=T.outermost, name=Temp.namedlabel("tig_main"), formals=[]})
 							  val _ = FE.findEscape(expr)
 							  val final = #exp(transExp(Env.base_venv, Env.base_tenv, expr, curLevel, NONE))
 							  val _ = T.procEntryExit({level=curLevel, body=final})

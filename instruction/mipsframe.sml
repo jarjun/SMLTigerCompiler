@@ -55,6 +55,19 @@ structure MipsFrame : FRAME = struct
 	datatype frag = PROC of {body: Tree.stm, frame: frame}
 				   |STRING of Temp.label * string
 
+
+	fun getCallerSaves() = map (fn (a,b) => a) callersaves
+	fun getCalleeSaves() = map (fn (a,b) => a) calleesaves
+	fun getArgRegs() = map (fn (a,b) => a) args
+	fun getReturnRegisters() = [V0, V1]
+	fun getReturnAddress() = RA
+
+	fun  seq [s] = s
+	    |seq [first,second] = Tree.SEQ(first, second)
+	    |seq (a::l) = Tree.SEQ(a, seq l)
+	    |seq [] = ((*print("Used seq incorrectly");*) Tree.EXP(Tree.CONST(0)))
+
+
 	fun printFrame {name, formals, numFrameLocals} = (print(Symbol.name(name)); 
 												map (fn x => case x of InFrame(num) => print(" InFrame(" ^ Int.toString(num) ^ ") ")
 																      |InReg(temp) => print (" InReg(" ^ Int.toString(temp) ^ ") ")) formals;
@@ -77,9 +90,7 @@ structure MipsFrame : FRAME = struct
 		let val formalsOnStack = ref 0
 			val regsUsed = ref 0
 			fun processBool true = ( formalsOnStack := !formalsOnStack + 1; InFrame( ~1 * (!formalsOnStack-1) * wordSize ) )
-			   |processBool false = if !regsUsed < numArgRegs 
-			   						then (regsUsed := !regsUsed +1; InReg(Temp.newtemp())) 
-			   						else processBool true
+			   |processBool false = (regsUsed := !regsUsed +1; InReg(Temp.newtemp()))
 
 		in 
 			{name = name, formals = (map processBool formals), numFrameLocals = formalsOnStack}
@@ -95,17 +106,48 @@ structure MipsFrame : FRAME = struct
 
     (* TODO procEntryExit1 does label, moves args to where the callee expects them, more? *)
 
+    fun procEntryExit1 (frame:frame, body:Tree.stm) = 
+    	let val frameLabel = name(frame)
+    		val num = List.length(formals(frame))
+    		val offset = num * ~4
+
+
+    		fun inner(formals, idx) = 
+    			if idx >= num then [] else
+	    			
+	    			if idx < 4
+	    			
+	    			then 
+	    				[
+	    				 case List.nth(formals, idx) of
+	    					InFrame i => Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST(i))), Tree.TEMP(List.nth(getArgRegs(), idx)))
+	    				   |InReg t => Tree.MOVE(Tree.TEMP(t), Tree.TEMP(List.nth(getArgRegs(), idx)))
+	    				]
+	    				@ 
+	    				inner(formals, idx+1)
+	    				
+
+	    			else     				
+	    				[
+	    				 case List.nth(formals, idx) of
+	    					InFrame i => Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST(i))), Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST( ((idx-4) * ~4) + offset )))  )
+	    				   |InReg t => Tree.MOVE(Tree.TEMP(t), Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST(  ((idx-4) * ~4) + offset  ) ))  )
+	    				]
+	    				@ 
+	    				inner(formals, idx+1)
+					
+
+
+    	in
+    		seq ( [Tree.LABEL(frameLabel)] @  inner(formals(frame), 0)  @ [body] )
+    	end
+
+
 	fun procEntryExit2 (frame:frame, body) = body @ [Assem.OPER{assem="",
 														  src=((map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves)),
 														  dst=[], jump=SOME([])}]
 
 
-
-	fun getCallerSaves() = map (fn (a,b) => a) callersaves
-	fun getCalleeSaves() = map (fn (a,b) => a) calleesaves
-	fun getArgTemps() = map (fn (a,b) => a) args
-	fun getReturnRegisters() = [V0, V1]
-	fun getReturnAddress() = RA
 
 
 end

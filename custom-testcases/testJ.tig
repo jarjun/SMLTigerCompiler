@@ -17,9 +17,43 @@ in
 end
 */
 
+/*
 let var a := 3
-	function f():int = a
+	function f():int = (a;a+1;a+2)
 in 
-	if 9 >= a then (a:=5;());
-	a
+	12
 end
+*/
+
+
+/*
+let 
+	var m := 10
+	function kappa(a:int, b:int, c:int, d:int, e:int, f:int, g:int, h:int, i:int):int = 
+	let function inner() = a+b+c+d+e+f+g+h+i
+	in
+		a+b+c+d+e+f+g+h+i
+	end
+
+
+in kappa(1,2,3,4,5,6,7,8,9) end
+*/
+
+
+/*
+let var a := 5
+	function test(n:int):int = 
+		let function inner():int = n
+	in 
+	inner()
+	end
+
+in
+test(a)
+end
+*/
+
+
+"abc"
+
+

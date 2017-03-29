@@ -347,7 +347,15 @@ structure Translate : TRANSLATE = struct
 
 	(* TODO call procEntryExit 1 on body *)
 	fun  procEntryExit({level=OUTER{...}, body}) = (ErrorMsg.error ~1 "Function declared in outer level"; ())
-		|procEntryExit({level=NORMAL{parent, frame, uniq}, body}) = fragList := (!fragList @ [(Frame.PROC{body=Tree.MOVE(Tree.TEMP(Frame.V0), unEx(body)), frame=frame})])
+		|procEntryExit({level=NORMAL{parent, frame, uniq}, body}) = 
+			let val body = Tree.MOVE(Tree.TEMP(Frame.V0), unEx(body))
+				val toAdd = (Frame.PROC{body= Frame.procEntryExit1(frame, body) , frame=frame})
+			in
+				fragList := (!fragList @ [toAdd])
+			end
+
+
+		
 
 	fun printResult() = List.app (fn Frame.PROC{frame= {name=n, formals=_, numFrameLocals=_}, body=body} =>(print("----------------\n"); 
 																			print(Symbol.name(n) ^ "\n");

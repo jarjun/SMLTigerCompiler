@@ -72,7 +72,7 @@ struct
 
 			   |munchStm (Tree.EXP(e1)) = (munchExp(e1); ())
 
-(*			   |munchStm(_) = ()*)
+			   (*|munchStm(_) = ()*)
 			  
 			and munchExp(Tree.CALL(Tree.NAME(n), args)) = result(fn r => emit(As.OPER{
 			   											  assem="jal " ^ Symbol.name(n) ^ "\n",
@@ -111,9 +111,31 @@ struct
 
 			   |munchExp (Tree.TEMP t) = t
 
-(*			   |munchExp(_) = Temp.newtemp()*)
+			   |munchExp (Tree.NAME n) = result (fn r => emit (As.OPER{
+			   														assem="la `d0, " ^ Symbol.name(n) ^ "\n",
+																	src=[], dst=[r], jump=NONE}))
+
+			   (*|munchExp(_) = Temp.newtemp()*)
 		
-		and munchArgs(idx, args) = [] (* just adds first 4 into regs, rest onto stack*)
+		and  munchArgs(idx, args) = 
+
+				if idx >= List.length(args) then [] else
+
+					let val cur = List.nth(args, idx)
+						val offset = List.length(args)* ~4
+					in
+						if idx < 4
+						then (munchStm(Tree.MOVE( Tree.TEMP(List.nth(MipsFrame.getArgRegs(), idx )), cur  ));
+								[ munchExp( Tree.TEMP(List.nth(MipsFrame.getArgRegs(), idx )))  ]
+								  @ munchArgs(idx+1, args))
+
+
+						else (munchStm( Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(MipsFrame.SP) , Tree.CONST( ((idx-4) * ~4) + offset  ))), cur));
+							  munchArgs(idx+1, args))
+					end
+
+
+			(* just adds first 4 into regs, rest onto stack*)
 
 		in
 			munchStm stm;

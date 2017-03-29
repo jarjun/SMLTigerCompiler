@@ -1,14 +1,14 @@
-/*
+
 let 
 	var m := 9
 	function kappa(a:int, b:int, c:int, d:int, e:int, f:int, g:int, h:int, i:int):int = 
-		let function pogchamp(j:int):int = a + b + c + d
+		let function pogchamp(j:int):int = a + b
 		in
-			a
+			a + b + c + d + e + f + g + h + i
 		end
-	function elegiggle(f:string):int = 0
+	/* function elegiggle(f:string):int = 0 */
 in end
-*/
+
 
 /* if 7=4 then 3=5 else 1+3 */
 
@@ -161,12 +161,12 @@ in
 end
 */
 
-
+/*
 let type rec = {a:int}
 	var b:= rec{a=5}
 	var c:= rec{a=5}
 in
 b=c
 end
-
+*/
 

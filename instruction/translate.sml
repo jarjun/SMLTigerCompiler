@@ -228,7 +228,7 @@ structure Translate : TRANSLATE = struct
 						Tree.LABEL(endLab)
 						],
 		
-		Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.MEM(Tree.TEMP(varTemp)), Tree.BINOP(Tree.MUL, Tree.BINOP(Tree.PLUS, Tree.TEMP(idxTemp), Tree.CONST 1), Tree.CONST Frame.wordSize)))
+		Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(varTemp), Tree.BINOP(Tree.MUL, Tree.BINOP(Tree.PLUS, Tree.TEMP(idxTemp), Tree.CONST 1), Tree.CONST Frame.wordSize)))
 		))
 
 		end
@@ -241,7 +241,7 @@ structure Translate : TRANSLATE = struct
 			fun helper (curExp, (curMoveList, curIdx)) = (curMoveList @ [Tree.MOVE(
 																				Tree.MEM(
 																						Tree.BINOP(Tree.PLUS, 
-																								   Tree.MEM(Tree.TEMP(recPointer)), 
+																								   Tree.TEMP(recPointer), 
 																								   Tree.CONST(curIdx * Frame.wordSize))
 																						),
 																				unEx(curExp)
@@ -257,7 +257,7 @@ structure Translate : TRANSLATE = struct
 			  )
 		end
 
-	fun fieldVar (recPointer, num) = Ex(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.MEM(unEx(recPointer)), Tree.CONST(num*Frame.wordSize))))
+	fun fieldVar (recPointer, num) = Ex(Tree.MEM(Tree.BINOP(Tree.PLUS, unEx(recPointer), Tree.CONST(num*Frame.wordSize))))
 
 	fun assignExp (var, value) = Nx(Tree.MOVE(unEx(var), unEx(value)))
 

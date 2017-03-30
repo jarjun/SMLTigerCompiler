@@ -78,13 +78,15 @@ a[7]
 end
 */
 
-/*
-let type rec = {a:int, b:int, c:int}
-	var d:rec := rec{a=7, b=8, c=9}
+
+let type rec = {a:int, b:rec2}
+	type rec2 = {c:int}
+	var e:rec2 := rec2{c=5}
+	var d:rec := rec{a=7, b=e}
 in 
-	d.c
+	d.b.c
 end
-*/
+
 
 /*
 let var sum := 0
@@ -94,6 +96,7 @@ in
 end
 */
 
+/*
 let var sum := 0
 	var iter := 0
 in
@@ -102,3 +105,4 @@ do
 (if iter < 7 then sum := sum + iter else break; iter := iter + 1);
 sum
 end
+*/

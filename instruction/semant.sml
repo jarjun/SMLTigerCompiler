@@ -271,11 +271,12 @@ struct
 
 						(checkInt( {exp=expLo, ty=tyLo} , pos);
 						checkInt( {exp=expHi, ty=tyHi} , pos);
-						let val newVenv = Symbol.enter(venv, var, Env.VarEntry{access=T.allocLocal(level)(!escape), ty=Types.INT})
+						let val iterAccess = T.allocLocal(level)(!escape)
+							val newVenv = Symbol.enter(venv, var, Env.VarEntry{access=iterAccess, ty=Types.INT})
 							val {exp=expBody, ty=tyBody} = transExp(newVenv, tenv, body, level, SOME(newBreakLabel)) (* CHANGE DONE LABEL *)
 						in
 							if sameType(tenv, pos, tyBody, Types.UNIT)
-							then (loopDepth := !loopDepth-1; {exp=T.forExp(expLo, expHi, expBody, newBreakLabel), ty=Types.UNIT})
+							then (loopDepth := !loopDepth-1; {exp=T.forExp(iterAccess, expLo, expHi, expBody, newBreakLabel), ty=Types.UNIT})
 							else (loopDepth := !loopDepth-1; ErrorMsg.error pos "error: for loop body must return unit"; {exp=T.nilExp(), ty=Types.INT})
 						end)
 					end

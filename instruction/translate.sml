@@ -31,7 +31,7 @@ sig
 	val fieldVar : exp * int -> exp
 	val assignExp : exp * exp -> exp
 	val whileExp : exp * exp * Temp.label -> exp
-	val forExp: exp * exp * exp * Temp.label -> exp
+	val forExp: access * exp * exp * exp * Temp.label -> exp
 	val breakExp: Temp.label option -> exp
 	val stringExp: string -> exp
 
@@ -275,24 +275,24 @@ structure Translate : TRANSLATE = struct
 			])
 		end
 
-	fun forExp (lo, hi, body, endLab) = 
-		let val iter = Temp.newtemp()
+	fun forExp ((_ , iterAcc), lo, hi, body, endLab) = 
+		let val iter = Frame.exp(iterAcc)(Tree.TEMP(Frame.FP))
 			val highTemp = Temp.newtemp()
 
 			val L1 = Temp.newlabel()
 			val L2 = Temp.newlabel()
 
 		in
-			Nx(seq[ Tree.MOVE(Tree.TEMP(iter), unEx(lo)),
+			Nx(seq[ Tree.MOVE(iter, unEx(lo)),
 					Tree.MOVE(Tree.TEMP(highTemp), unEx(hi)),
-					Tree.CJUMP(Tree.LE, Tree.TEMP(iter), Tree.TEMP(highTemp), L2, endLab),
+					Tree.CJUMP(Tree.LE, iter, Tree.TEMP(highTemp), L2, endLab),
 
 					Tree.LABEL(L1),
-					Tree.MOVE(Tree.TEMP(iter), Tree.BINOP(Tree.PLUS, Tree.TEMP(iter), Tree.CONST(1))    ),
+					Tree.MOVE(iter, Tree.BINOP(Tree.PLUS, iter, Tree.CONST(1))    ),
 
 					Tree.LABEL(L2),
 					unNx(body),
-					Tree.CJUMP(Tree.LT, Tree.TEMP(iter), Tree.TEMP(highTemp), L1, endLab),
+					Tree.CJUMP(Tree.LT, iter, Tree.TEMP(highTemp), L1, endLab),
 
 					Tree.LABEL(endLab)
 

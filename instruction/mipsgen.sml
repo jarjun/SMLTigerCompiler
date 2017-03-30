@@ -76,10 +76,14 @@ struct
 			  
 			and munchExp(Tree.CALL(Tree.NAME(n), args)) = 
 					let val t = Temp.newtemp()
+						val numArgs = List.length(args)
+						val offset = if numArgs > 4 then (numArgs-4) * ~4 else 0
+						val moveSP = Tree.MOVE(Tree.TEMP(Frame.SP), Tree.BINOP(Tree.PLUS, Tree.TEMP(Frame.SP), Tree.CONST(offset)))
 						val beforeJal = Tree.MOVE(Tree.TEMP(t), Tree.TEMP(Frame.RA))
 						val afterJal = Tree.MOVE(Tree.TEMP(Frame.RA), Tree.TEMP(t))
 					in
-														(munchStm(beforeJal);
+														(munchStm(moveSP);
+														 munchStm(beforeJal);
 														(emit (As.OPER{
 						   											  	assem="jal " ^ Symbol.name(n) ^ "\n",
 						   											  	src=munchArgs(0, args),
@@ -131,7 +135,7 @@ struct
 				if idx >= List.length(args) then [] else
 
 					let val cur = List.nth(args, idx)
-						val offset = List.length(args)* ~4
+						(*val offset = List.length(args)* ~4*)
 					in
 						if idx < 4
 						then (munchStm(Tree.MOVE( Tree.TEMP(List.nth(MipsFrame.getArgRegs(), idx )), cur  ));
@@ -139,7 +143,7 @@ struct
 								  @ munchArgs(idx+1, args))
 
 
-						else (munchStm( Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(MipsFrame.SP) , Tree.CONST( ((idx-4) * ~4) + offset  ))), cur));
+						else (munchStm( Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(MipsFrame.SP) , Tree.CONST( (((idx+1)-4) * 4)  ))), cur));
 							  munchArgs(idx+1, args))
 					end
 

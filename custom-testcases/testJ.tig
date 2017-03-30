@@ -78,7 +78,7 @@ a[7]
 end
 */
 
-
+/*
 let type rec = {a:int, b:rec2}
 	type rec2 = {c:int}
 	var e:rec2 := rec2{c=5}
@@ -86,7 +86,7 @@ let type rec = {a:int, b:rec2}
 in 
 	d.b.c
 end
-
+*/
 
 /*
 let var sum := 0
@@ -106,3 +106,14 @@ do
 sum
 end
 */
+
+let 
+	function kappa(a:int, b:int, c:int, d:int):int = 
+	let function inner():int = b+c+d
+	in
+		a; inner()
+	end
+
+
+in kappa(9,10,11,12) end
+

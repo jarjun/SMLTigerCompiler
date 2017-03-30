@@ -139,8 +139,8 @@ structure MipsFrame : FRAME = struct
 	    			else     				
 	    				[
 	    				 case List.nth(formals, idx) of
-	    					InFrame i => Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST(i))), Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST( ((idx-4) * ~4) + offset )))  )
-	    				   |InReg t => Tree.MOVE(Tree.TEMP(t), Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST(  ((idx-4) * ~4) + offset  ) ))  )
+	    					InFrame i => Tree.MOVE(Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST(i))), Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST( ((  (idx+1)-4) * 4) )))  )
+	    				   |InReg t => Tree.MOVE(Tree.TEMP(t), Tree.MEM(Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST(  (( (idx+1)-4 ) * 4)  ) ))  )
 	    				]
 	    				@ 
 	    				inner(formals, idx+1)

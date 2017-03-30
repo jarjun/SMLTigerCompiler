@@ -20,9 +20,16 @@ structure Main = struct
          val _ = (app (fn s => Printtree.printtree(out,s)) stms'; TextIO.output(out, "\n"))
 
       	 val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
+         val newInstrs = F.procEntryExit2(frame, instrs)
+
+         (* register allocation??? *)
+
+
+         val newerInstrs = #body(F.procEntryExit3(frame, newInstrs))
+
 
          val format0 = Assem.format(MipsFrame.regToString)
-      in  app (fn i => TextIO.output(out,format0 i)) instrs;
+      in  app (fn i => TextIO.output(out,format0 i)) newerInstrs;
           TextIO.output(out, "---------------------\n")
 
      end

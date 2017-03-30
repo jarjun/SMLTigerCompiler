@@ -21,7 +21,7 @@ structure Main = struct
 
       	 val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
 
-         val format0 = Assem.format(Temp.makestring)
+         val format0 = Assem.format(MipsFrame.regToString)
       in  app (fn i => TextIO.output(out,format0 i)) instrs;
           TextIO.output(out, "---------------------\n")
 

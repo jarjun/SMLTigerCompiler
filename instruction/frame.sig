@@ -20,7 +20,7 @@ sig
 	val procEntryExit1 : frame * Tree.stm -> Tree.stm
 
 	val procEntryExit2 : frame * Assem.instr list -> Assem.instr list
-(*	val procEntryExit3 : frame * Assem.instr list -> {prolog:string, body: Assem.instr list, epilog: string}*)
+	val procEntryExit3 : frame * Assem.instr list -> {prolog:string, body: Assem.instr list, epilog: string}
 
 	datatype frag = PROC of {body: Tree.stm, frame: frame}
 				   |STRING of Temp.label * string
@@ -35,4 +35,6 @@ sig
 	val getReturnRegisters: unit -> Temp.temp list
 	val getReturnAddress: unit -> Temp.temp
 	
+	val tempMap: string Temp.Table.table
+	val regToString: Temp.temp -> string
 end

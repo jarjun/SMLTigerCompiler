@@ -55,6 +55,15 @@ structure MipsFrame : FRAME = struct
 	datatype frag = PROC of {body: Tree.stm, frame: frame}
 				   |STRING of Temp.label * string
 
+	val tempMap = 
+		let
+			fun helper((k, v), running) = Temp.Table.enter(running, k, v)
+		in
+			foldl helper Temp.Table.empty (callersaves @ calleesaves @ args @ reserved)
+		end
+
+	fun regToString(reg) = case Temp.Table.look(tempMap, reg) of SOME(s) => s
+																|NONE    => Temp.makestring(reg)
 
 	fun getCallerSaves() = map (fn (a,b) => a) callersaves
 	fun getCalleeSaves() = map (fn (a,b) => a) calleesaves
@@ -147,8 +156,7 @@ structure MipsFrame : FRAME = struct
 														  src=((map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves)),
 														  dst=[], jump=SOME([])}]
 
-
-
+	(*fun procEntryExit3 (frame:frame, body) = {prolog:"", body:body, epilog: ""}*)
 
 end
 

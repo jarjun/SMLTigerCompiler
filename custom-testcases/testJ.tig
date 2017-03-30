@@ -43,9 +43,9 @@ in kappa(1,2,3,4,5,6,7,8,9) end
 /*
 let var a := 5
 	function test(n:int):int = 
-		let function inner():int = n
+		let function inner(b:int):int = n
 	in 
-	inner()
+	inner(20)
 	end
 
 in
@@ -53,7 +53,14 @@ test(a)
 end
 */
 
+let 
+	function a():int = 7
+	function b():int = 5
+in 
+	a() + b()
+end
 
-"abc"
+
+
 
 

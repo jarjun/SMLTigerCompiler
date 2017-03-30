@@ -74,11 +74,12 @@ struct
 
 			   (*|munchStm(_) = ()*)
 			  
-			and munchExp(Tree.CALL(Tree.NAME(n), args)) = result(fn r => emit(As.OPER{
-			   											  assem="jal " ^ Symbol.name(n) ^ "\n",
-			   											  src=munchArgs(0, args),
-			   											  dst= Frame.getCallerSaves() @ Frame.getReturnRegisters() @ [Frame.getReturnAddress()],
-			   											  jump=NONE}))
+			and munchExp(Tree.CALL(Tree.NAME(n), args)) = (emit(As.OPER{
+						   											  	assem="jal " ^ Symbol.name(n) ^ "\n",
+						   											  	src=munchArgs(0, args),
+						   											  	dst= Frame.getCallerSaves() @ Frame.getReturnRegisters() @ [Frame.getReturnAddress()],
+						   											  	jump=NONE});
+														  Frame.V0)
 
 
 			   |munchExp (Tree.MEM(Tree.BINOP(Tree.PLUS, e1, Tree.CONST(i)))) = result (fn r => emit (As.OPER{

@@ -1,4 +1,4 @@
-semant: 
+instruction: 
 	echo 'Main.compile "$(file)";' | sml sources.cm
 
 loop:

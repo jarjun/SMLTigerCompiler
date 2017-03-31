@@ -17,8 +17,8 @@ structure Main = struct
          val stms' = Canon.traceSchedule(Canon.basicBlocks stms)
 
          (*val _ = TextIO.output(out, "AFTER TRACE\n")*)
-         val _ = (app (fn s => Printtree.printtree(out,s)) stms'; TextIO.output(out, "\n"))
-
+         (*val _ = (app (fn s => Printtree.printtree(out,s)) stms'; TextIO.output(out, "\n"))
+*)
       	 val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
          val newInstrs = F.procEntryExit2(frame, instrs)
 
@@ -29,8 +29,8 @@ structure Main = struct
 
 
          val format0 = Assem.format(MipsFrame.regToString)
-      in  app (fn i => TextIO.output(out,format0 i)) newerInstrs;
-          TextIO.output(out, "---------------------\n")
+      in  app (fn i => TextIO.output(out,format0 i)) newerInstrs
+          (*TextIO.output(out, "---------------------\n")*)
 
      end
 

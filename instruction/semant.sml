@@ -593,7 +593,7 @@ struct
 							  val _ = T.procEntryExit({level=curLevel, body=final})
 							  val finalFrags = T.getResult()
 						  in 
-						  	T.printResult();
+						  	(*T.printResult();*)
 						  	finalFrags
 						  end
 

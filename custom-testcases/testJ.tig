@@ -107,6 +107,7 @@ sum
 end
 */
 
+/*
 let 
 	function kappa(a:int, b:int, c:int, d:int):int = 
 	let function inner():int = b+c+d
@@ -116,4 +117,14 @@ let
 
 
 in kappa(9,10,11,12) end
+*/
+
+/*
+if 4<5 then 10 else 11
+*/
+
+
+while(1=1) do 
+if 1 <= 1 then break else break
+
 

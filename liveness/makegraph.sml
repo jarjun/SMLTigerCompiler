@@ -122,7 +122,7 @@ struct
 			val edgeGraph = (instrIdx := 0; foldl makeEdges initGraph instrList)
 
 		in 
-			FG.printGraph printNode edgeGraph;
+			(*FG.printGraph printNode edgeGraph;*)
 
 			(edgeGraph, FG.nodes(edgeGraph)) 
 		end

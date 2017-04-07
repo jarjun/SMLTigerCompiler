@@ -26,7 +26,9 @@ structure Main = struct
 
 
          val newerInstrs = #body(F.procEntryExit3(frame, newInstrs))
-         val _ = MakeGraph.instrs2graph(newerInstrs)
+         val (flowgraph, nodes) = MakeGraph.instrs2graph(newerInstrs)
+
+         val _ = Liveness.interferenceGraph(flowgraph)
 
          val format0 = Assem.format(MipsFrame.regToString)
       in  app (fn i => TextIO.output(out,format0 i)) newerInstrs

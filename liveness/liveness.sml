@@ -12,7 +12,7 @@ sig
 				   gtemp: unit FGL.node -> Temp.temp,
 				   moves: (unit FGL.node * unit FGL.node) list}
 
-	val interferenceGraph: info FG.graph -> (*igraph * (info FG.node -> Temp.temp list)*) int
+	val interferenceGraph: info FG.graph -> igraph * (info FG.node -> Temp.temp list)
 
 	(*val show: outstream * igraph -> unit*)
 
@@ -114,19 +114,56 @@ struct
 		end
 
 
+	fun printNode(id, u) = MipsFrame.regToString(id)
 
 
+	fun makeInterferenceGraph(liveness) = 
+		let val newGraph:(unit FGL.graph) = FGL.empty
+			fun addNodes (key, {livein, liveout}, graph) = 
+				let fun inLoop (temp, graph) = FGL.addNode(graph, temp, ())
+					fun outLoop (temp, graph) = FGL.addNode(graph, temp, ())
+					val postLiveinGraph = SplaySet.foldl inLoop graph livein
+				in
+					SplaySet.foldl outLoop postLiveinGraph liveout
+				end
+
+			fun addEdges (key, {livein, liveout}, graph) = 
+				let fun inLoop (temp, graph) = SplaySet.foldl (fn (c,r) => FGL.doubleEdge(r, temp, c)) graph livein
+					fun outLoop (temp, graph) = SplaySet.foldl (fn (c,r) => FGL.doubleEdge(r, temp, c)) graph liveout
+					val postLiveinGraph = SplaySet.foldl inLoop graph livein
+				in
+					SplaySet.foldl outLoop postLiveinGraph liveout
+				end
+			val nodeGraph = SplayMap.foldli addNodes newGraph liveness
+		in 
+			SplayMap.foldli addEdges nodeGraph liveness
+		end
 
 
-
-
-
+	fun makeMoveList(igraph, fgraph) = 
+		let fun helper (node, moveList) = 
+				case FG.nodeInfo(node) of {uses = [u], defs = [d], ismove=true} => moveList @ [(FGL.getNode(igraph, u), FGL.getNode(igraph, d))]
+										|_ 										=> moveList
+		in
+			foldl helper [] (FG.nodes(fgraph))
+		end
 	
 
-	fun interferenceGraph(graph) = 
-			let val newL = interferenceGraphHelper(graph, makeLivenessInfoInit(graph))
+	fun interferenceGraph(fgraph) = 
+			let val newL = interferenceGraphHelper(fgraph, makeLivenessInfoInit(fgraph))
+				val interGraph = makeInterferenceGraph(newL)
+				val moveList = makeMoveList(interGraph, fgraph)
+				val igraph = IGRAPH{graph = interGraph,
+							  tnode = (fn x => FGL.getNode(interGraph, x)),
+							  gtemp = FGL.getNodeID,
+							  moves = moveList}
+				fun fnode2liveout(node) = case SplayMap.find(newL, FG.getNodeID(node)) of SOME({livein, liveout}) => SplaySet.listItems(liveout)
+																						|_ => (print("error: flowgraph node not in liveness list"); [])
 			in 
-				(printLiveInfo(graph, newL); 0)
+(*				printLiveInfo(fgraph, newL); 
+				FGL.printGraph printNode interGraph;
+				app (fn (a,b) => print(MipsFrame.regToString(FGL.getNodeID(a)) ^ " " ^ MipsFrame.regToString(FGL.getNodeID(b)) ^ "\n" )) moveList;*)
+				(igraph, fnode2liveout)
 			end
 
 

@@ -115,9 +115,10 @@ struct
 
 
 	fun printNode(id, u) = MipsFrame.regToString(id)
+(*	fun printNode(id, u) = Temp.makestring(id) *)
 
+	fun makeInterferenceGraph(liveness, fgraph) = 
 
-	fun makeInterferenceGraph(liveness) = 
 		let val newGraph:(unit FGL.graph) = FGL.empty
 			fun addNodes (key, {livein, liveout}, graph) = 
 				let fun inLoop (temp, graph) = FGL.addNode(graph, temp, ())
@@ -128,11 +129,17 @@ struct
 				end
 
 			fun addEdges (key, {livein, liveout}, graph) = 
-				let fun inLoop (temp, graph) = SplaySet.foldl (fn (c,r) => FGL.doubleEdge(r, temp, c)) graph livein
-					fun outLoop (temp, graph) = SplaySet.foldl (fn (c,r) => FGL.doubleEdge(r, temp, c)) graph liveout
-					val postLiveinGraph = SplaySet.foldl inLoop graph livein
+				let (*fun inLoop (temp, graph) = SplaySet.foldl (fn (c,r) => FGL.doubleEdge(r, temp, c)) graph livein*)
+					val {uses, defs, ismove} = FG.nodeInfo(FG.getNode(fgraph, key))
+					fun outLoop (temp, graph) = (case defs of [def] => if ismove 
+																	  then (case uses of [use] => (case Temp.compare(use, temp) of EQUAL => graph
+																	  	                                                        |_     => FGL.doubleEdge(graph, temp, def))
+																	  			        |_    => (print("error: move instruction has not 1 use"); FGL.doubleEdge(graph, temp, def)))   
+																	  else FGL.doubleEdge(graph, temp, def)
+						                                     |_    => graph)
+					(*val postLiveinGraph = SplaySet.foldl inLoop graph livein*)
 				in
-					SplaySet.foldl outLoop postLiveinGraph liveout
+					SplaySet.foldl outLoop graph liveout
 				end
 			val nodeGraph = SplayMap.foldli addNodes newGraph liveness
 		in 
@@ -151,7 +158,7 @@ struct
 
 	fun interferenceGraph(fgraph) = 
 			let val newL = interferenceGraphHelper(fgraph, makeLivenessInfoInit(fgraph))
-				val interGraph = makeInterferenceGraph(newL)
+				val interGraph = makeInterferenceGraph(newL, fgraph)
 				val moveList = makeMoveList(interGraph, fgraph)
 				val igraph = IGRAPH{graph = interGraph,
 							  tnode = (fn x => FGL.getNode(interGraph, x)),
@@ -162,7 +169,7 @@ struct
 			in 
 (*				printLiveInfo(fgraph, newL); 
 				FGL.printGraph printNode interGraph;
-				app (fn (a,b) => print(MipsFrame.regToString(FGL.getNodeID(a)) ^ " " ^ MipsFrame.regToString(FGL.getNodeID(b)) ^ "\n" )) moveList;*)
+				app (fn (a,b) => print(MipsFrame.regToString(FGL.getNodeID(a)) ^ " " ^ MipsFrame.regToString(FGL.getNodeID(b)) ^ "\n" )) moveList; *)
 				(igraph, fnode2liveout)
 			end
 

@@ -114,34 +114,36 @@ struct
 		end
 
 
-	fun printNode(id, u) = MipsFrame.regToString(id)
-(*	fun printNode(id, u) = Temp.makestring(id) *)
+	(*fun printNode(id, u) = MipsFrame.regToString(id)*)
+	fun printNode(id, u) = Temp.makestring(id) 
 
 	fun makeInterferenceGraph(liveness, fgraph) = 
 
 		let val newGraph:(unit FGL.graph) = FGL.empty
-			fun addNodes (key, {livein, liveout}, graph) = 
-				let fun inLoop (temp, graph) = FGL.addNode(graph, temp, ())
+			fun addNodes (node, graph) = 
+				let val {uses, defs, ismove} = FG.nodeInfo(node)
+					val temps = uses @ defs
+					fun loop (temp, graph) = FGL.addNode(graph, temp, ())
+(*					fun inLoop (temp, graph) = FGL.addNode(graph, temp, ())
 					fun outLoop (temp, graph) = FGL.addNode(graph, temp, ())
-					val postLiveinGraph = SplaySet.foldl inLoop graph livein
+					val postLiveinGraph = SplaySet.foldl inLoop graph livein*)
 				in
-					SplaySet.foldl outLoop postLiveinGraph liveout
+					foldl loop graph temps
 				end
 
 			fun addEdges (key, {livein, liveout}, graph) = 
-				let (*fun inLoop (temp, graph) = SplaySet.foldl (fn (c,r) => FGL.doubleEdge(r, temp, c)) graph livein*)
-					val {uses, defs, ismove} = FG.nodeInfo(FG.getNode(fgraph, key))
+				let val {uses, defs, ismove} = FG.nodeInfo(FG.getNode(fgraph, key))
 					fun outLoop (temp, graph) = (case defs of [def] => if ismove 
 																	  then (case uses of [use] => (case Temp.compare(use, temp) of EQUAL => graph
 																	  	                                                        |_     => FGL.doubleEdge(graph, temp, def))
 																	  			        |_    => (print("error: move instruction has not 1 use"); FGL.doubleEdge(graph, temp, def)))   
 																	  else FGL.doubleEdge(graph, temp, def)
-						                                     |_    => graph)
+						                                     |defList => (foldl (fn (c, r) =>  FGL.doubleEdge(r, temp, c)) graph defList) )
 					(*val postLiveinGraph = SplaySet.foldl inLoop graph livein*)
 				in
 					SplaySet.foldl outLoop graph liveout
 				end
-			val nodeGraph = SplayMap.foldli addNodes newGraph liveness
+			val nodeGraph = foldl addNodes newGraph (FG.nodes(fgraph))
 		in 
 			SplayMap.foldli addEdges nodeGraph liveness
 		end
@@ -170,6 +172,9 @@ struct
 (*				printLiveInfo(fgraph, newL); 
 				FGL.printGraph printNode interGraph;
 				app (fn (a,b) => print(MipsFrame.regToString(FGL.getNodeID(a)) ^ " " ^ MipsFrame.regToString(FGL.getNodeID(b)) ^ "\n" )) moveList; *)
+				
+(*				printLiveInfo(fgraph, newL); *)
+				FGL.printGraph printNode interGraph;
 				(igraph, fnode2liveout)
 			end
 

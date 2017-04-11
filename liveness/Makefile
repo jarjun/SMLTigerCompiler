@@ -1,4 +1,4 @@
-instruction: 
+liveness: 
 	echo 'Main.compile "$(file)";' | sml sources.cm
 
 loop:

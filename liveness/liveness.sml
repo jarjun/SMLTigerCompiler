@@ -115,7 +115,6 @@ struct
 
 
 	fun printNode(id, u) = MipsFrame.regToString(id)
-	(*fun printNode(id, u) = Temp.makestring(id) *)
 
 	fun makeInterferenceGraph(liveness, fgraph) = 
 
@@ -169,12 +168,12 @@ struct
 				fun fnode2liveout(node) = case SplayMap.find(newL, FG.getNodeID(node)) of SOME({livein, liveout}) => SplaySet.listItems(liveout)
 																						|_ => (print("error: flowgraph node not in liveness list"); [])
 			in 
-(*				printLiveInfo(fgraph, newL); 
-				FGL.printGraph printNode interGraph;
-				app (fn (a,b) => print(MipsFrame.regToString(FGL.getNodeID(a)) ^ " " ^ MipsFrame.regToString(FGL.getNodeID(b)) ^ "\n" )) moveList; *)
-				
-				(*printLiveInfo(fgraph, newL); *)
-				FGL.printGraph printNode interGraph;
+        (*print live ins and outs at each line*)
+				(*printLiveInfo(fgraph, newL);*)
+        (*print interference graph*)
+        (*FGL.printGraph printNode interGraph;*)
+        (*print move list*) 
+				(*app (fn (a,b) => print(MipsFrame.regToString(FGL.getNodeID(a)) ^ " " ^ MipsFrame.regToString(FGL.getNodeID(b)) ^ "\n" )) moveList;*) 
 				(igraph, fnode2liveout)
 			end
 

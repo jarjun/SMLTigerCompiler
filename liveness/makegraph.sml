@@ -122,6 +122,7 @@ struct
 			val edgeGraph = (instrIdx := 0; foldl makeEdges initGraph instrList)
 
 		in 
+            (*use this to print flowgraph*)
 			(*FG.printGraph printNode edgeGraph;*)
 
 			(edgeGraph, FG.nodes(edgeGraph)) 

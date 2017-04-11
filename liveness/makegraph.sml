@@ -83,7 +83,7 @@ struct
 					let val curNode = !instrIdx
 						val nextIdx = !instrIdx+1
 						val edgeList = case jump of NONE          => if nextIdx >= List.length(FG.nodes(graph)) then [] else [{to=nextIdx, from=curNode}]
-												   |SOME([])      => if nextIdx >= List.length(FG.nodes(graph)) then [] else [{to=nextIdx, from=curNode}]
+												   |SOME([])      => []
 												   |SOME(dstList) => foldl (fn (x, r) => r @ [{to=valOf(labelMapStruct.find(!labelMap, Symbol.name(x))), from=curNode}]) [] dstList 
 					in
 (*						print("from: " ^ Int.toString(curNode) ^ "\n");

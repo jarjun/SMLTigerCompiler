@@ -114,8 +114,8 @@ struct
 		end
 
 
-	(*fun printNode(id, u) = MipsFrame.regToString(id)*)
-	fun printNode(id, u) = Temp.makestring(id) 
+	fun printNode(id, u) = MipsFrame.regToString(id)
+	(*fun printNode(id, u) = Temp.makestring(id) *)
 
 	fun makeInterferenceGraph(liveness, fgraph) = 
 
@@ -173,7 +173,7 @@ struct
 				FGL.printGraph printNode interGraph;
 				app (fn (a,b) => print(MipsFrame.regToString(FGL.getNodeID(a)) ^ " " ^ MipsFrame.regToString(FGL.getNodeID(b)) ^ "\n" )) moveList; *)
 				
-(*				printLiveInfo(fgraph, newL); *)
+				(*printLiveInfo(fgraph, newL); *)
 				FGL.printGraph printNode interGraph;
 				(igraph, fnode2liveout)
 			end

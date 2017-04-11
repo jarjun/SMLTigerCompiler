@@ -152,14 +152,14 @@ structure MipsFrame : FRAME = struct
     	end
 
 
-	fun procEntryExit2 (frame:frame, body) = body @ [Assem.OPER{assem="\n",
+	fun procEntryExit2 (frame:frame, body) = body (*@ [Assem.OPER{assem="\n",
 														  src=((map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves)),
-														  dst=[], jump=SOME([])}]
+														  dst=[], jump=SOME([])}]*)
 
 	fun procEntryExit3 ({name, formals, numFrameLocals}, body) = 
 		let
 			val ret = Assem.OPER{assem="jr `s0\n",
-							   src=[RA],
+							   src= (map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves),
 							   dst=[], jump=SOME([])}
 		in
 			{prolog= "PROCEDURE " ^ Symbol.name(name) ^ "\n", 

@@ -22,18 +22,18 @@ structure Main = struct
          val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
          val newInstrs = F.procEntryExit2(frame, instrs)
 
-         (* register allocation??? *)
+
+         val (allocInstrs, alloc) = RegAlloc.alloc(newInstrs, frame)
 
 
-         val newerInstrs = #body(F.procEntryExit3(frame, newInstrs))
-         val (flowgraph, nodes) = MakeGraph.instrs2graph(newerInstrs)
+         (*val newerInstrs = #body(F.procEntryExit3(frame, allocInstrs))*) (* TODO procEntryExit3 before reg alloc or after??? need sink if after *)
 
-         val (interference, _) = Liveness.interferenceGraph(flowgraph)
-         val (alloc, spills) = Color.color({interference=interference, initial=MipsFrame.getPrecoloredAlloc(), spillCost=(fn x => 1), registers=MipsFrame.getAllRegStrs()})
-         val _ = Color.printAlloc(alloc, interference)
 
-         val format0 = Assem.format(MipsFrame.regToString)
-      in  app (fn i => TextIO.output(out,format0 i)) newerInstrs
+         val format1 = Assem.format(MipsFrame.regToString)
+         val format0 = Assem.format(  (fn x => case (Temp.Table.look(alloc, x)) of SOME(s) => s
+                                                                                  |NONE => (ErrorMsg.error ~1 "cannot allocate"; Temp.makestring(x)))) 
+      in  (*app (fn i => TextIO.output(out,format1 i)) allocInstrs;*)
+          app (fn i => TextIO.output(out,format0 i)) allocInstrs
           (*TextIO.output(out, "---------------------\n")*)
 
      end

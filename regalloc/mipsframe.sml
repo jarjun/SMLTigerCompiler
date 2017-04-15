@@ -66,6 +66,11 @@ structure MipsFrame : FRAME = struct
 																|NONE    => Temp.makestring(reg)
 
 
+	fun properIntToString i = if i < 0 
+						  then ("-" ^ Int.toString(i * ~1))
+						  else Int.toString(i)
+
+
 	fun getPrecoloredAlloc() = foldl (fn ((a,b), running) => Temp.Table.enter(running, a, b)) Temp.Table.empty (callersaves @ calleesaves @ args @ reserved)
 	fun getAllRegStrs() = map (fn (a,b) => b) (callersaves @ calleesaves @ args @ reserved)
 
@@ -73,6 +78,7 @@ structure MipsFrame : FRAME = struct
 	fun getCallerSavesStr() = map (fn (a,b) => b) callersaves
 	fun getCalleeSaves() = map (fn (a,b) => a) calleesaves
 	fun getArgRegs() = map (fn (a,b) => a) args
+	fun getReservedRegs() = map (fn (a,b) => a) reserved
 	fun getReturnRegisters() = [V0, V1]
 	fun getReturnAddress() = RA
 
@@ -157,18 +163,48 @@ structure MipsFrame : FRAME = struct
     	end
 
 
-	fun procEntryExit2 (frame:frame, body) = body (*@ [Assem.OPER{assem="\n",
+	fun procEntryExit2 (frame:frame, body) = body @ [Assem.OPER{assem="\n",
 														  src=((map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves)),
-														  dst=[], jump=SOME([])}]*)
+														  dst=[], jump=SOME([])}]
 
-	fun procEntryExit3 ({name, formals, numFrameLocals}, body) = 
+	fun procEntryExit3 ({name, formals, numFrameLocals}, lab::body, spills) = 
 		let
-			val ret = Assem.OPER{assem="jr `s0\n",
-							   src= (map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves),
+			val ret = Assem.OPER{assem="jr `s0\n\n",
+							   src= (*(map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves)*) [RA],
 							   dst=[], jump=SOME([])}
+
+			
+			val saveRA = Assem.OPER{assem="sw `s0, " ^ properIntToString(!numFrameLocals * ~4) ^ "(`s1) \n", 
+									src=[RA, FP], dst=[], jump=NONE}
+
+			val loadRA = Assem.OPER{assem="lw `d0, " ^ properIntToString(!numFrameLocals * ~4) ^ "(`s0) \n", 
+									src=[FP], dst=[RA], jump=NONE}
+
+
+			val counter = ref 0 (* return addr at 0*)
+			val spillStores = map (fn x => (counter:= !counter+1; 
+												Assem.OPER{
+			   									assem="sw `s0, " ^ properIntToString((!numFrameLocals + !counter) * ~4) ^ "(`s1) \n",
+												src=[x, FP], dst=[], jump=NONE})  )   spills
+
+
+			val counter = ref 0 (* return addr at 0*)
+			val spillLoads = map (fn x => (counter:= !counter+1; 
+												Assem.OPER{
+			   									assem="lw `d0, " ^ properIntToString((!numFrameLocals + !counter) * ~4) ^ "(`s0) \n",
+												src=[FP], dst=[x], jump=NONE})  )   spills
+
 		in
 			{prolog= "PROCEDURE " ^ Symbol.name(name) ^ "\n", 
-			 body=body @ [ret], 
+			 body= [lab] @ 
+			 	   [saveRA] @
+			 	   spillStores @ 
+			 	   
+			 	   body @ 
+			 	   
+			 	   [loadRA] @
+			 	   spillLoads @ 
+			 	   [ret], 
 			 epilog="END " ^ Symbol.name(name) ^ "\n"}
 		end
 		

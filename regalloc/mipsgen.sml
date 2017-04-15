@@ -83,13 +83,13 @@ struct
 						val afterJal = Tree.MOVE(Tree.TEMP(Frame.RA), Tree.TEMP(t))
 					in
 														(munchStm(moveSP);
-														 munchStm(beforeJal);
+														 (*munchStm(beforeJal);*)
 														(emit (As.OPER{
 						   											  	assem="jal " ^ Symbol.name(n) ^ "\n",
 						   											  	src=munchArgs(0, args),
 						   											  	dst= Frame.getCallerSaves() @ Frame.getReturnRegisters() @ [Frame.getReturnAddress()] @Frame.getArgRegs(),
 						   											  	jump=NONE}));
-														munchStm(afterJal);
+														(*munchStm(afterJal);*)
 														Frame.V0)
 
 					end

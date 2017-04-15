@@ -24,6 +24,7 @@ in
 end
 */
 
+/*
 let function test1():int =
 	let
 		function test2(a:int, b:int, c:int, d:int):int = 10
@@ -33,3 +34,88 @@ let function test1():int =
 in 
 	test1()
 end
+*/
+
+/*
+let var a := 1
+	var b := 2
+	var c := 3
+	var d := 10
+	var e := 4
+	var f := 5
+	var g := 6
+	var h := 7
+	var i := 8
+	var j := 9
+
+	function blah():int = 3
+
+in
+a+b+ blah()
+end
+*/
+
+/*
+let function a():int = 10
+	function b():int = 20
+in
+a() + b()
+end
+*/
+
+/*
+let function fact(n:int):int = if n = 1 then 1 else n * fact(n-1)
+in
+fact(5)
+end
+*/
+
+
+
+let var a := 1
+	var b := 2
+	var c := 3
+	var d := 10
+	var e := 4
+	var f := 5
+	var g := 6
+	var h := 7
+	var i := 8
+	var j := 9
+	var k := 9
+	var l := 9
+	var m := 9
+	var n := 9
+	var o := 9
+	var p := 9
+	var q := 9
+	var r := 9
+	var s := 9
+	var t := 9
+	var u := 9
+	var v := 9
+	var w := 9
+	var x := 9
+	var y := 9
+	var z := 9
+
+	function blah():int = 1
+
+in
+a+b+c+d+e+f+g+h+i+j+k+l+m+n+o+p+q+r+s;
+blah()
+end
+
+
+
+
+
+/*
+let var a := 3
+	function f():int = 
+		let function g():int = a
+		in g() end
+in 
+	f()+5
+end
+*/

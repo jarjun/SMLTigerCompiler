@@ -30,6 +30,7 @@ flowgraph.sml
 makegraph.sml
 liveness.sml
 color.sml
+regalloc.sml
 $/smlnj-lib.cm
 $/ml-yacc-lib.cm
 $/basis.cm

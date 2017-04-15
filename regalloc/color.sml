@@ -39,14 +39,14 @@ struct
 									  		in
 									  			(*print ("\n ---------------- \n");*)
 									  			let val (newAlloc, spillList) = color({interference=newInterference, initial=initial, spillCost=spillCost, registers=registers})
-									  				val unSpilledNeighbors = List.filter (fn x => case Temp.Table.look(initial, x) of SOME(t) => true
-  																																			|NONE => false) (FGL.preds(toSimplify))
+									  				val unSpilledNeighbors = List.filter (fn x => case Temp.Table.look(newAlloc, x) of SOME(t) => true
+  																																			|NONE => false) (FGL.preds(toSimplify)) (*(FGL.preds(  FGL.getNode(graph, FGL.getNodeID(toSimplify))  ))*)
 
-									  				val neighborColors = map (fn x => case Temp.Table.look(initial, x) of SOME(t) => t
+									  				val neighborColors = map (fn x => case Temp.Table.look(newAlloc, x) of SOME(t) => t
   																																|NONE =>   (print("error: uncolored, unspilled neighbor"); "Have you ever heard the tale of Darth Plagueis the Wise? It's not a story the Jedi would tell you..." ) ) unSpilledNeighbors
-									  				
-									  				val _ = app (fn x => print(x ^ " ")) neighborColors
-									  				val _ = print "\n"
+									  				(*val _ = app (fn x => print(MipsFrame.regToString(x) ^ " ")) unSpilledNeighbors*)
+									  				(*val _ = app (fn x => print(x ^ " ")) neighborColors*)
+									  				(*val _ = print "\n"*)
 									  				val availableColors = List.filter (fn x => not (stringListContains(neighborColors, x))) registers
 
 									  			in 

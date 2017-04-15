@@ -171,7 +171,7 @@ struct
         (*print live ins and outs at each line*)
 				(*printLiveInfo(fgraph, newL);*)
         (*print interference graph*)
-(*        FGL.printGraph printNode interGraph;*)
+        (*FGL.printGraph printNode interGraph;*)
         (*print move list*) 
 				(*app (fn (a,b) => print(MipsFrame.regToString(FGL.getNodeID(a)) ^ " " ^ MipsFrame.regToString(FGL.getNodeID(b)) ^ "\n" )) moveList;*) 
 				(igraph, fnode2liveout)

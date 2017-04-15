@@ -87,7 +87,7 @@ struct
 														(emit (As.OPER{
 						   											  	assem="jal " ^ Symbol.name(n) ^ "\n",
 						   											  	src=munchArgs(0, args),
-						   											  	dst= Frame.getCallerSaves() @ Frame.getReturnRegisters() @ [Frame.getReturnAddress()],
+						   											  	dst= Frame.getCallerSaves() @ Frame.getReturnRegisters() @ [Frame.getReturnAddress()] @Frame.getArgRegs(),
 						   											  	jump=NONE}));
 														munchStm(afterJal);
 														Frame.V0)

@@ -26,7 +26,17 @@ struct
   																								) nodes
   		in
   			case removePrecolored(FGL.nodes(graph)) of 
-  								[node]   => (Temp.Table.enter(initial, gtemp(node), List.nth(registers, 0)), [])
+  								[node]   => let val unSpilledNeighbors = List.filter (fn x => case Temp.Table.look(initial, x) of SOME(t) => true
+  																																			|NONE => false) (FGL.preds(node))
+  												val neighborColors = map (fn x => case Temp.Table.look(initial, x) of SOME(t) => t
+  																																|NONE =>   (print("error: uncolored, unspilled neighbor"); "Have you ever heard the tale of Darth Plagueis the Wise? It's not a story the Jedi would tell you..." ) ) unSpilledNeighbors
+  												val availableColors = List.filter (fn x => not (stringListContains(neighborColors, x))) registers
+  											in
+  												if List.length(availableColors) = 0
+								  				then (initial, [gtemp(node)] )
+								  				else (Temp.Table.enter(initial, gtemp(node), List.nth(availableColors, 0)), [])
+  												(*(Temp.Table.enter(initial, gtemp(node), List.nth(registers, 0)), [])*)
+  											end
   			                    |[]       => (print("no nodes in igraph"); (initial, []))
   			                    |nodelist =>
   			                    			let (*val _ = app (fn x => print(Int.toString(FGL.outDegree(x)) ^ " ")) nodelist*)
@@ -44,10 +54,13 @@ struct
 
 									  				val neighborColors = map (fn x => case Temp.Table.look(newAlloc, x) of SOME(t) => t
   																																|NONE =>   (print("error: uncolored, unspilled neighbor"); "Have you ever heard the tale of Darth Plagueis the Wise? It's not a story the Jedi would tell you..." ) ) unSpilledNeighbors
+									  				val availableColors = List.filter (fn x => not (stringListContains(neighborColors, x))) registers
 									  				(*val _ = app (fn x => print(MipsFrame.regToString(x) ^ " ")) unSpilledNeighbors*)
 									  				(*val _ = app (fn x => print(x ^ " ")) neighborColors*)
+									  				(*val _ = print(MipsFrame.regToString(gtemp(toSimplify)) ^ ": ")*)
+									  				(*val _ = app (fn x => print(x ^ " ")) availableColors*)
 									  				(*val _ = print "\n"*)
-									  				val availableColors = List.filter (fn x => not (stringListContains(neighborColors, x))) registers
+							
 
 									  			in 
 									  				if List.length(availableColors) = 0

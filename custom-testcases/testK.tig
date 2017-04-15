@@ -7,10 +7,29 @@ while(1=1) do
 if 1 <= 1 then break else break
 */
 
+/*
 let var a := 1
 var b := 2
 var c := 3
 in
-1+2+c
+a+b+c
 end
-	
+*/
+
+/*
+let 
+	function test(a:int, b:int, c:int, d:int):int = 10
+in 
+	test(1,2,3,4)
+end
+*/
+
+let function test1():int =
+	let
+		function test2(a:int, b:int, c:int, d:int):int = 10
+	in
+	test2(1,2,3,4)
+	end
+in 
+	test1()
+end

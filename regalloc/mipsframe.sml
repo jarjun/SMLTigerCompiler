@@ -65,7 +65,12 @@ structure MipsFrame : FRAME = struct
 	fun regToString(reg) = case Temp.Table.look(tempMap, reg) of SOME(s) => s
 																|NONE    => Temp.makestring(reg)
 
+
+	fun getPrecoloredAlloc() = foldl (fn ((a,b), running) => Temp.Table.enter(running, a, b)) Temp.Table.empty (callersaves @ calleesaves @ args @ reserved)
+	fun getAllRegStrs() = map (fn (a,b) => b) (callersaves @ calleesaves @ args @ reserved)
+
 	fun getCallerSaves() = map (fn (a,b) => a) callersaves
+	fun getCallerSavesStr() = map (fn (a,b) => b) callersaves
 	fun getCalleeSaves() = map (fn (a,b) => a) calleesaves
 	fun getArgRegs() = map (fn (a,b) => a) args
 	fun getReturnRegisters() = [V0, V1]

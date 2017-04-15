@@ -9,7 +9,7 @@ structure Main = struct
    fun emitproc out (F.PROC{body,frame}) =
      let val _ = print ("emit " ^ Symbol.name(Frame.name frame) ^ "\n")
 (*         val _ = Printtree.printtree(out,body); *)
-	       val stms = Canon.linearize body
+         val stms = Canon.linearize body
 
 (*         val _ = TextIO.output(out, "BEFORE TRACE\n")
          
@@ -19,7 +19,7 @@ structure Main = struct
          (*val _ = TextIO.output(out, "AFTER TRACE\n")*)
          (*val _ = (app (fn s => Printtree.printtree(out,s)) stms'; TextIO.output(out, "\n"))
 *)
-      	 val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
+         val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
          val newInstrs = F.procEntryExit2(frame, instrs)
 
          (* register allocation??? *)
@@ -28,7 +28,9 @@ structure Main = struct
          val newerInstrs = #body(F.procEntryExit3(frame, newInstrs))
          val (flowgraph, nodes) = MakeGraph.instrs2graph(newerInstrs)
 
-         val _ = Liveness.interferenceGraph(flowgraph)
+         val (interference, _) = Liveness.interferenceGraph(flowgraph)
+         val (alloc, spills) = Color.color({interference=interference, initial=MipsFrame.getPrecoloredAlloc(), spillCost=(fn x => 1), registers=MipsFrame.getAllRegStrs()})
+         val _ = Color.printAlloc(alloc, interference)
 
          val format0 = Assem.format(MipsFrame.regToString)
       in  app (fn i => TextIO.output(out,format0 i)) newerInstrs
@@ -41,7 +43,7 @@ structure Main = struct
    fun withOpenFile fname f = 
        let val out = TextIO.openOut fname
         in (f out before TextIO.closeOut out) 
-	    handle e => (TextIO.closeOut out; raise e)
+      handle e => (TextIO.closeOut out; raise e)
        end 
 
    fun compile filename = 
@@ -49,7 +51,7 @@ structure Main = struct
            val frags = (FindEscape.findEscape absyn; Semant.transProg absyn)
         in 
             withOpenFile (filename ^ ".s") 
-	     (fn out => (app (emitproc out) frags))
+       (fn out => (app (emitproc out) frags))
        end
 
 end

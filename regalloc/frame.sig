@@ -30,7 +30,11 @@ sig
 	val printFrame : frame -> unit
 	val printAccess : access -> unit
 
+	val getPrecoloredAlloc: unit -> string Temp.Table.table
+	val getAllRegStrs: unit -> string list
+
 	val getCallerSaves: unit -> Temp.temp list
+	val getCallerSavesStr: unit -> string list
 	val getCalleeSaves: unit -> Temp.temp list
 	val getArgRegs: unit -> Temp.temp list
 	val getReturnRegisters: unit -> Temp.temp list

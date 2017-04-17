@@ -180,30 +180,51 @@ structure MipsFrame : FRAME = struct
 			val loadRA = Assem.OPER{assem="lw `d0, " ^ properIntToString(!numFrameLocals * ~4) ^ "(`s0) \n", 
 									src=[FP], dst=[RA], jump=NONE}
 
+			
+
 
 			val counter = ref 0 (* return addr at 0*)
 			val spillStores = map (fn x => (counter:= !counter+1; 
 												Assem.OPER{
-			   									assem="sw `s0, " ^ properIntToString((!numFrameLocals + !counter) * ~4) ^ "(`s1) \n",
+			   									assem="sw `s0, " ^ properIntToString((!numFrameLocals + !counter+1) * ~4) ^ "(`s1) \n",
 												src=[x, FP], dst=[], jump=NONE})  )   spills
 
 
 			val counter = ref 0 (* return addr at 0*)
 			val spillLoads = map (fn x => (counter:= !counter+1; 
 												Assem.OPER{
-			   									assem="lw `d0, " ^ properIntToString((!numFrameLocals + !counter) * ~4) ^ "(`s0) \n",
+			   									assem="lw `d0, " ^ properIntToString((!numFrameLocals + !counter+1) * ~4) ^ "(`s0) \n",
 												src=[FP], dst=[x], jump=NONE})  )   spills
+			val stackSize = (!numFrameLocals+List.length(spills)+2)*(~4)
+			val fpLoc = (!numFrameLocals+1) * ~4
+			val allocStack = [Assem.OPER{
+									assem="sw `s0, " ^ properIntToString(fpLoc) ^ "(`s1) \n", 
+									src=[FP, SP], dst=[], jump=NONE},
+							  Assem.MOVE{
+									assem="move `d0, `s0\n",
+									src=SP, dst=FP},
+							  Assem.OPER{
+									assem="addi `d0, `s0, " ^ properIntToString(stackSize) ^ "\n",
+									src=[SP], dst=[SP], jump=NONE }]
+			val deallocStack = [Assem.OPER{
+									assem="addi `d0, `s0, " ^ properIntToString(~1*stackSize) ^ "\n",
+									src=[SP], dst=[SP], jump=NONE },
+								Assem.OPER{
+									assem="lw `d0, " ^ properIntToString(fpLoc) ^ "(`s0)\n",
+									src=[FP], dst=[FP], jump=NONE }] 
 
 		in
 			{prolog= "PROCEDURE " ^ Symbol.name(name) ^ "\n", 
 			 body= [lab] @ 
+			 	   allocStack @
 			 	   [saveRA] @
 			 	   spillStores @ 
 			 	   
 			 	   body @ 
 			 	   
 			 	   [loadRA] @
-			 	   spillLoads @ 
+			 	   spillLoads @
+			 	   deallocStack @ 
 			 	   [ret], 
 			 epilog="END " ^ Symbol.name(name) ^ "\n"}
 		end

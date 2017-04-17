@@ -9,3 +9,7 @@ test:
 
 custom:
 	echo 'Main.compile "../custom-testcases/test$(firstword $(filter-out $@,$(MAKECMDGOALS))).tig";' | sml sources.cm
+
+run:
+	echo 'Main.compile "$(file)";' | sml sources.cm
+	spim -f $(file).s

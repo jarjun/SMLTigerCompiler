@@ -7,7 +7,7 @@ structure Main = struct
   fun getsome (SOME x) = x
 
    fun emitproc out (F.PROC{body,frame}) =
-     let val _ = print ("emit " ^ Symbol.name(Frame.name frame) ^ "\n")
+     let (*val _ = print ("emit " ^ Symbol.name(Frame.name frame) ^ "\n")*)
 (*         val _ = Printtree.printtree(out,body); *)
          val stms = Canon.linearize body
 
@@ -49,9 +49,10 @@ structure Main = struct
    fun compile filename = 
        let val absyn = Parse.parse filename
            val frags = (FindEscape.findEscape absyn; Semant.transProg absyn)
+           val header = ".text\n.align 2\n\nmain:\nmove $fp, $sp\naddi $sp, $sp, -100\nmove $a0, $fp\njal tig_main\naddi $sp, $sp, 100\nlw $fp, 0($fp)\n\nmove $a0, $v0\nli $v0, 1\nsyscall\n\nli $v0, 10\nsyscall\n\n"
         in 
             withOpenFile (filename ^ ".s") 
-       (fn out => (app (emitproc out) frags))
+       (fn out =>  ((*TextIO.output(out, header);*) app (emitproc out) frags))
        end
 
 end

@@ -66,12 +66,12 @@ end
 /*
 let function fact(n:int):int = if n = 1 then 1 else n * fact(n-1)
 in
-fact(5)
+fact(13)
 end
 */
 
 
-
+/*
 let var a := 1
 	var b := 2
 	var c := 3
@@ -102,12 +102,9 @@ let var a := 1
 	function blah():int = 1
 
 in
-a+b+c+d+e+f+g+h+i+j+k+l+m+n+o+p+q+r+s;
-blah()
+a+b+c+d+e+f+g+h+i+j+k+l+m+n+o+p+q+r+s
 end
-
-
-
+*/
 
 
 /*
@@ -119,3 +116,30 @@ in
 	f()+5
 end
 */
+
+/*
+let var ret := 1
+in
+	for a:= 1 to 10 do (ret := ret*a);
+	ret
+end
+*/
+
+/*
+let function fact(n:int):int = if n = 1 then 1 else n * fact(n-1)
+	var sum := 0
+in
+for a:= 1 to 10 do (sum := sum+fact(a));
+sum
+end
+*/
+
+let var a := 5
+	function f(b:int, c:int, d:int, e:int, f:int, g:int):int = 
+		let function fact(n:int):int = if n = 1 then 1 else n * fact(n-1)
+		in
+			fact(a) + fact(b) + fact(g)
+		end
+in 
+	f(1,2,3,4,5,6)
+end

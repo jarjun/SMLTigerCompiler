@@ -14,7 +14,7 @@ struct
 	   |spillManager( _ , [], alloc, instrs, curSpilled) = (ErrorMsg.error ~1 "Cannot register allocate this program"; (instrs, alloc, curSpilled))
 	   |spillManager( _ , regToSpill::spillableRegs, alloc, instrs, curSpilled) = 
 			
-			let val _ = print("Spilling " ^ MipsFrame.regToString(regToSpill) ^ "\n")
+			let (*val _ = print("Spilling " ^ MipsFrame.regToString(regToSpill) ^ "\n")*)
 
 				val instrListNoSink = List.take(instrs, List.length(instrs) - 1)
 				val newSink = Assem.OPER{assem="\n",
@@ -26,7 +26,7 @@ struct
 				val (flowgraph, nodes) = MakeGraph.instrs2graph(newInstrs)
 		        val (interference, _) = Liveness.interferenceGraph(flowgraph)
 		        val (newAlloc, spills) = Color.color({interference=interference, initial=MipsFrame.getPrecoloredAlloc(), spillCost=(fn x => 1), registers=MipsFrame.getAllRegStrs()})
-		        val _ = Color.printAlloc(newAlloc, interference)
+		        (*val _ = Color.printAlloc(newAlloc, interference)*)
 
 
 			in
@@ -42,7 +42,7 @@ struct
 		let	val (flowgraph, nodes) = MakeGraph.instrs2graph(instrs)
 	        val (interference, _) = Liveness.interferenceGraph(flowgraph)
 	        val (alloc, spills) = Color.color({interference=interference, initial=MipsFrame.getPrecoloredAlloc(), spillCost=(fn x => 1), registers=MipsFrame.getAllRegStrs()})
-	        val _ = Color.printAlloc(alloc, interference)
+	        (*val _ = Color.printAlloc(alloc, interference)*)
 
 	        val (finInstrs, finAlloc, spillsOnFrame) = spillManager(spills, MipsFrame.getCalleeSaves(), alloc, instrs, [])
 

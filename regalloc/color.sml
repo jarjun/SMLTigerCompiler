@@ -43,7 +43,7 @@ struct
 									  			val insigNodes = List.filter (fn x => FGL.outDegree(x) < List.length(registers)) (nodelist)
 									  			val toSimplify = if List.length(insigNodes) > 0
 									  							 then List.nth(insigNodes, 0)
-									  							 else (print("potential spill\n"); List.nth(nodelist, 0))
+									  							 else ((*print("potential spill\n");*) List.nth(nodelist, 0))
 									  			val newGraph = FGL.remove(graph, toSimplify)
 									  			val newInterference = Liveness.IGRAPH{graph=newGraph, tnode=tnode, gtemp=gtemp, moves=moves}
 									  		in

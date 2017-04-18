@@ -46,6 +46,7 @@ structure MipsFrame : FRAME = struct
 	val calleesaves = [(S0, "$s0"), (S1, "$s1"), (S2, "$s2"), (S3, "$s3"), (S4, "$s4"), (S5, "$s5"), (S6, "$s6"), (S7, "$s7")]
 	val args = [(A0, "$a0"), (A1, "$a1"), (A2, "$a2"), (A3, "$a3")]
 	val reserved = [(ZERO, "$r0"), (AT, "$at"), (V0, "$v0"), (V1, "$v1"), (K0, "$k0"), (K1, "$k1"), (GP, "$gp"), (SP, "$sp"), (FP, "$fp"), (RA, "$ra")]
+	val sink = [(ZERO, "$r0"), (AT, "$at"),  (K0, "$k0"), (K1, "$k1"), (GP, "$gp"), (SP, "$sp"), (FP, "$fp"), (RA, "$ra")]
 
 	datatype access = InFrame of int | InReg of Temp.temp
 
@@ -79,6 +80,9 @@ structure MipsFrame : FRAME = struct
 	fun getCalleeSaves() = map (fn (a,b) => a) calleesaves
 	fun getArgRegs() = map (fn (a,b) => a) args
 	fun getReservedRegs() = map (fn (a,b) => a) reserved
+	
+	fun getSinkRegs() = map (fn (a,b) => a) sink
+
 	fun getReturnRegisters() = [V0, V1]
 	fun getReturnAddress() = RA
 
@@ -164,7 +168,7 @@ structure MipsFrame : FRAME = struct
 
 
 	fun procEntryExit2 (frame:frame, body) = body @ [Assem.OPER{assem="\n",
-														  src=((map (fn (a,b) => a) reserved) @ (map (fn (a,b) => a) calleesaves)),
+														  src=((map (fn (a,b) => a) sink) @ (map (fn (a,b) => a) calleesaves)),
 														  dst=[], jump=SOME([])}]
 
 	fun procEntryExit3 ({name, formals, numFrameLocals}, lab::body, spills) = 

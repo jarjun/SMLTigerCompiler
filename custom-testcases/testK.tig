@@ -134,6 +134,7 @@ sum
 end
 */
 
+/*
 let var a := 5
 	function f(b:int, c:int, d:int, e:int, f:int, g:int):int = 
 		let function fact(n:int):int = if n = 1 then 1 else n * fact(n-1)
@@ -142,4 +143,72 @@ let var a := 5
 		end
 in 
 	f(1,2,3,4,5,6)
+end
+*/
+
+/*
+let var a := 1
+	var b := 2
+	var c := 3
+	var d := 10
+	var e := 4
+	var f := 5
+	var g := 6
+	var h := 7
+	var i := 8
+	var j := 9
+	var k := 9
+	var l := 9
+	var m := 9
+	var n := 9
+	var o := 9
+	var p := 9
+	var q := 9
+	var r := 9
+	var s := 9
+	var t := 9
+	var u := 9
+	var v := 9
+	var w := 9
+	var x := 9
+	var y := 9
+	var z := 9
+
+	function blah():int = 1
+
+in
+a+b+c+d+e+f+g+h+i+j+k+l+m+n+o;
+blah();
+p+q+r+s+t+u+v+w
+end
+*/
+
+
+let function fib(a:int):int=
+	if a = 1 | a = 2 then 1
+	else fib(a-1) + fib(a-2)
+
+
+
+	function fib2(num:int):int = 
+	let var a:= 0
+		var b := 1
+		var fib := 0
+		function innerfib():int = if num = 1 then 1
+								else (for c:= 1 to num-1 do (fib := a+b; a:=a+b; b:=a-b; a:=a-b; b:=a+b);
+			 					fib)
+	in
+		innerfib()
+	end
+
+	function compare(n:int):int =
+		if n = 1 then fib(n) = fib2(n)
+		else
+
+		(fib(n) = fib2(n)) & compare(n-1)
+
+in
+
+compare(20)
+
 end

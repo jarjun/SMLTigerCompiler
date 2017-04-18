@@ -38,6 +38,7 @@ sig
 	val getCalleeSaves: unit -> Temp.temp list
 	val getArgRegs: unit -> Temp.temp list
 	val getReservedRegs: unit -> Temp.temp list
+	val getSinkRegs: unit -> Temp.temp list
 	val getReturnRegisters: unit -> Temp.temp list
 	val getReturnAddress: unit -> Temp.temp
 	

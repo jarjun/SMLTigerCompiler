@@ -18,7 +18,7 @@ struct
 
 				val instrListNoSink = List.take(instrs, List.length(instrs) - 1)
 				val newSink = Assem.OPER{assem="\n",
-										 src=( MipsFrame.getReservedRegs() @ spillableRegs),
+										 src=( MipsFrame.getSinkRegs() @ spillableRegs),
 										 dst=[], jump=SOME([])}
 				val newInstrs = instrListNoSink @ [newSink]
 

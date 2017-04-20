@@ -26,7 +26,6 @@ canon.sml
 mipsgen.sml
 funcgraph.sig
 funcgraph.sml
-flowgraph.sml
 makegraph.sml
 liveness.sml
 color.sml

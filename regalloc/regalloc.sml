@@ -17,7 +17,7 @@ struct
 			let (*val _ = print("Spilling " ^ MipsFrame.regToString(regToSpill) ^ "\n")*)
 
 				val instrListNoSink = List.take(instrs, List.length(instrs) - 1)
-				val newSink = Assem.OPER{assem="\n",
+				val newSink = Assem.OPER{assem="",
 										 src=( MipsFrame.getSinkRegs() @ spillableRegs),
 										 dst=[], jump=SOME([])}
 				val newInstrs = instrListNoSink @ [newSink]

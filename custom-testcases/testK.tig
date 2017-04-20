@@ -183,7 +183,7 @@ p+q+r+s+t+u+v+w
 end
 */
 
-
+/*
 let function fib(a:int):int=
 	if a = 1 | a = 2 then 1
 	else fib(a-1) + fib(a-2)
@@ -210,5 +210,30 @@ let function fib(a:int):int=
 in
 
 compare(20)
+
+end
+*/
+
+
+let 
+	var zero := 0
+	function getZero():int = zero
+
+	function h(a:int):int = 
+		let 
+			var one := 1
+			function getOne():int = one
+
+			function f(x:int):int = 
+				let	function g(y:int):int = if x = zero then getZero() else h(y)
+				in
+					x + g(a - getOne())
+				end
+		in
+			f(a)
+		end
+in
+
+h(11)
 
 end

@@ -167,7 +167,7 @@ structure MipsFrame : FRAME = struct
     	end
 
 
-	fun procEntryExit2 (frame:frame, body) = body @ [Assem.OPER{assem="\n",
+	fun procEntryExit2 (frame:frame, body) = body @ [Assem.OPER{assem="",
 														  src=((map (fn (a,b) => a) sink) @ (map (fn (a,b) => a) calleesaves)),
 														  dst=[], jump=SOME([])}]
 

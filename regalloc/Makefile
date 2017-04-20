@@ -1,4 +1,4 @@
-liveness: 
+regalloc: 
 	echo 'Main.compile "$(file)";' | sml sources.cm
 
 loop:

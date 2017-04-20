@@ -4,16 +4,9 @@ Wesley Valentine (wsv)
 
 How to run: 
 To run either compile the group with 'sml sources.cm' then in the sml terminal run 'Main.compile "$filename"' inserting the test file into $filename
-or use the makefile and run 'make liveness file=$filename' where $filename is the test file (without quotes in this case).
-There is currently no result output. 
+or use the makefile and run 'make regalloc file=$filename' where $filename is the test file (without quotes in this case).
+There is currently no result output. The allocation results are apparent in the generated .s MIPS file.
 
-To view the console output of the flowgraph you can uncomment line 126 in makegraph. 
-
-To view console output of the live-in and live-out sets uncomment line 172. 
-
-To view console output for the interference graph, uncomment line 174.
-
-To view console output for the movelist, uncomment line 176.
 
 Notes:
-We did not deal with the case of a move and an interference edge between two nodes. It is out understanding that this will be dealt with in the register allocation stage, where the interference edge will override the move edge. 
+We did some partial spilling in that if there are registers used across function calls or not enough registers to allocate with just $t's then it spills over into the $s registers one at a time as needed and liveness analysis and register allocation are rerun. These are saved and restored at the beginning and end of the fragment respectively. The $v and $a registers are treated the same way as $t registers and can be used as temporaries, but not across a function call.

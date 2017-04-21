@@ -38,7 +38,9 @@ structure Main = struct
 
      end
 
-    | emitproc out (F.STRING(lab,s)) = TextIO.output(out,(Symbol.name(lab) ^ ":" ^ s ^ "\n"))
+    | emitproc out (F.STRING(lab,s)) = TextIO.output(out,(".data\n" ^ Symbol.name(lab) ^ 
+                                                          ":\n.word " ^ Int.toString(String.size(s)) ^
+                                                           "\n.ascii \"" ^ s ^ "\"\n" ^ ".text\n"))
 
    fun withOpenFile fname f = 
        let val out = TextIO.openOut fname
@@ -50,12 +52,19 @@ structure Main = struct
        let val absyn = Parse.parse filename
            val frags = (FindEscape.findEscape absyn; Semant.transProg absyn)
            val header = ".text\n.align 2\n\nmain:\nmove $fp, $sp\naddi $sp, $sp, -100\nmove $a0, $fp\njal tig_main\naddi $sp, $sp, 100\nlw $fp, 0($fp)\n\nmove $a0, $v0\nli $v0, 1\nsyscall\n\nli $v0, 10\nsyscall\n\n"
+        
+
+          val sysString = TextIO.inputAll (TextIO.openIn "sysspim.s")
+          val runtimeString = TextIO.inputAll (TextIO.openIn "runtimele.s")
+
         in 
             withOpenFile (filename ^ ".s") 
-       (fn out =>  ((*TextIO.output(out, header);*) app (emitproc out) frags))
+       (fn out =>  ( TextIO.output(out, runtimeString); app (emitproc out) frags; TextIO.output(out, sysString) ))
        end
 
 end
+
+
 
 
 

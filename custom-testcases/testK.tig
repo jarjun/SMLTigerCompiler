@@ -214,7 +214,7 @@ compare(20)
 end
 */
 
-
+/*
 let 
 	var zero := 0
 	function getZero():int = zero
@@ -237,3 +237,41 @@ in
 h(11)
 
 end
+*/
+
+/*
+let function printint(i: int) =
+  let function f(i:int) = if i>0 
+	     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+   in if i<0 then (print("-"); f(-i))
+      else if i>0 then f(i)
+      else print("0")
+  end
+
+in
+printint(  "abc" = "ab"  )
+end
+*/
+
+
+
+let type rec = {a:int, b:string}
+	var thing := rec{a=1, b="asd"}
+
+
+	function printint(i: int) =
+  let function f(i:int) = if i>0 
+	     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+   in if i<0 then (print("-"); f(-i))
+      else if i>0 then f(i)
+      else print("0")
+  end
+in
+
+printint(thing.a);
+print(thing.b)
+
+end
+
+
+

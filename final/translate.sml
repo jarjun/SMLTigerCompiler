@@ -136,7 +136,7 @@ structure Translate : TRANSLATE = struct
 
 	fun binop(oper, e1, e2) = Ex(Tree.BINOP(oper, unEx(e1), unEx(e2)))
 
-	fun  relop(Tree.EQ, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringEqual", [unEx(e1), unEx(e2)]))
+	fun  relop(Tree.EQ, e1, e2, Types.STRING) = Ex(Frame.externalCall("tig_stringEqual", [unEx(e1), unEx(e2)]))
 		|relop(Tree.NE, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringNE", [unEx(e1), unEx(e2)]))
 		|relop(Tree.LT, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringLT", [unEx(e1), unEx(e2)]))
 		|relop(Tree.GT, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringGT", [unEx(e1), unEx(e2)]))
@@ -200,7 +200,7 @@ structure Translate : TRANSLATE = struct
 
 		in
 			Ex(Tree.ESEQ(seq[
-						Tree.MOVE(Tree.TEMP(arrPointer), Frame.externalCall("initArray", [Tree.BINOP(Tree.PLUS, unEx(size), Tree.CONST 1), unEx(init)])),
+						Tree.MOVE(Tree.TEMP(arrPointer), Frame.externalCall("tig_initArray", [Tree.BINOP(Tree.PLUS, unEx(size), Tree.CONST 1), unEx(init)])),
 						Tree.MOVE(Tree.MEM(Tree.TEMP(arrPointer)), unEx(size))
 						], 
 
@@ -251,7 +251,7 @@ structure Translate : TRANSLATE = struct
 			val (moveList, fieldIdx) = foldl helper ([], 0) explist
 
 		in
-			Ex(Tree.ESEQ(seq ([ Tree.MOVE(Tree.TEMP(recPointer), Frame.externalCall("allocRecord", [Tree.CONST(numFields)])) ] @ moveList),
+			Ex(Tree.ESEQ(seq ([ Tree.MOVE(Tree.TEMP(recPointer), Frame.externalCall("tig_allocRecord", [Tree.CONST(numFields * MipsFrame.wordSize)])) ] @ moveList),
 
 						Tree.TEMP(recPointer))
 			  )

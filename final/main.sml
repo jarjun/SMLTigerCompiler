@@ -62,7 +62,7 @@ structure Main = struct
        (fn out =>  ( app (emitproc out) frags; TextIO.output(out, runtimeString); TextIO.output(out, sysString) ))
        end
 
-       handle ErrorMsg.Error => ()
+       handle Error => ()
 
 end
 

@@ -137,7 +137,7 @@ structure Translate : TRANSLATE = struct
 	fun binop(oper, e1, e2) = Ex(Tree.BINOP(oper, unEx(e1), unEx(e2)))
 
 	fun  relop(Tree.EQ, e1, e2, Types.STRING) = Ex(Frame.externalCall("tig_stringEqual", [unEx(e1), unEx(e2)]))
-		|relop(Tree.NE, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringNE", [unEx(e1), unEx(e2)]))
+		|relop(Tree.NE, e1, e2, Types.STRING) = Ex(Frame.externalCall("tig_not", [Frame.externalCall("tig_stringEqual", [unEx(e1), unEx(e2)])]))
 		|relop(Tree.LT, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringLT", [unEx(e1), unEx(e2)]))
 		|relop(Tree.GT, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringGT", [unEx(e1), unEx(e2)]))
 		|relop(Tree.LE, e1, e2, Types.STRING) = Ex(Frame.externalCall("stringLE", [unEx(e1), unEx(e2)]))

@@ -375,5 +375,5 @@ end
 */
 
 
-if "ab\n" <> "ab\n" then print("true\n") else print("false\n")
+/* if "ab\n" <> "ab\n" then print("true\n") else print("false\n") */
 

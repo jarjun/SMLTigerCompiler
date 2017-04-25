@@ -59,8 +59,10 @@ structure Main = struct
 
         in 
             withOpenFile (filename ^ ".s") 
-       (fn out =>  ( TextIO.output(out, runtimeString); app (emitproc out) frags; TextIO.output(out, sysString) ))
+       (fn out =>  ( app (emitproc out) frags; TextIO.output(out, runtimeString); TextIO.output(out, sysString) ))
        end
+
+       handle ErrorMsg.Error => ()
 
 end
 

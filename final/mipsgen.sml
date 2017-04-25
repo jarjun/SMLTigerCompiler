@@ -72,7 +72,7 @@ struct
 
 			   |munchStm (Tree.EXP(e1)) = (munchExp(e1); ())
 
-			   (*|munchStm(_) = ()*)
+			   |munchStm(_) = (ErrorMsg.error ~1 "Cannot generate assembly"; ())
 			  
 			and munchExp(Tree.CALL(Tree.NAME(n), args)) = 
 					let val t = Temp.newtemp()
@@ -128,7 +128,7 @@ struct
 			   														assem="la `d0, " ^ Symbol.name(n) ^ "\n",
 																	src=[], dst=[r], jump=NONE}))
 
-			   (*|munchExp(_) = Temp.newtemp()*)
+			   |munchExp(_) = (ErrorMsg.error ~1 "Cannot generate assembly"; Temp.newtemp())
 		
 		and  munchArgs(idx, args) = 
 

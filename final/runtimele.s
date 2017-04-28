@@ -751,3 +751,12 @@ tig_flush:
 tig_exit:
   j exit
   .end tig_exit
+
+.data
+subscriptError: .asciiz "Subscript out of bounds. Exiting program.\n"
+.text
+subscriptOutOfBounds:
+la $a0, subscriptError
+li $v0, 4
+syscall
+j exit

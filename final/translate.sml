@@ -224,7 +224,7 @@ structure Translate : TRANSLATE = struct
 						Tree.CJUMP(Tree.LT, Tree.TEMP(idxTemp), Tree.CONST(0), badLab, endLab),
 						Tree.LABEL(badLab),
 						(* TODO: print error message, array out of bounds exception *)
-						Tree.EXP(Frame.externalCall("exit", [Tree.CONST 1])),
+						Tree.EXP(Frame.externalCall("subscriptOutOfBounds", [Tree.CONST 1])),
 						Tree.LABEL(endLab)
 						],
 		

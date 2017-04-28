@@ -79,17 +79,15 @@ struct
 						val numArgs = List.length(args)
 						val offset = if numArgs > 4 then (numArgs-4) * ~4 else 0
 						val moveSP = Tree.MOVE(Tree.TEMP(Frame.SP), Tree.BINOP(Tree.PLUS, Tree.TEMP(Frame.SP), Tree.CONST(offset)))
-						val beforeJal = Tree.MOVE(Tree.TEMP(t), Tree.TEMP(Frame.RA))
-						val afterJal = Tree.MOVE(Tree.TEMP(Frame.RA), Tree.TEMP(t))
+						val restoreSP = Tree.MOVE(Tree.TEMP(Frame.SP), Tree.BINOP(Tree.PLUS, Tree.TEMP(Frame.SP), Tree.CONST(~1*offset)))
 					in
 														(munchStm(moveSP);
-														 (*munchStm(beforeJal);*)
 														(emit (As.OPER{
 						   											  	assem="jal " ^ Symbol.name(n) ^ "\n",
 						   											  	src=munchArgs(0, args),
 						   											  	dst= Frame.getCallerSaves() @ Frame.getReturnRegisters() @ [Frame.getReturnAddress()] @Frame.getArgRegs(),
 						   											  	jump=NONE}));
-														(*munchStm(afterJal);*)
+														munchStm(restoreSP);
 														Frame.V0)
 
 					end

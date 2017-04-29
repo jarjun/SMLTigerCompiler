@@ -119,21 +119,36 @@ end
 
 /*
 let var a := 3
+	function printint(i: int) =
+	  let function f(i:int) = if i>0 
+		     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+	   in if i<0 then (print("-"); f(-i))
+	      else if i>0 then f(i)
+	      else print("0")
+	  end
 	function f():int = 
 		let function g():int = a
 		in g() end
 in 
-	f()+5
+	printint(f()+5)
 end
 */
 
 /*
 let var ret := 1
+	function printint(i: int) =
+	  let function f(i:int) = if i>0 
+		     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+	   in if i<0 then (print("-"); f(-i))
+	      else if i>0 then f(i)
+	      else print("0")
+	  end
 in
 	for a:= 1 to 10 do (ret := ret*a);
-	ret
+	printint(ret)
 end
 */
+
 
 /*
 let function fact(n:int):int = if n = 1 then 1 else n * fact(n-1)
@@ -146,15 +161,23 @@ end
 
 /*
 let var a := 5
+	function printint(i: int) =
+	  let function f(i:int) = if i>0 
+		     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+	   in if i<0 then (print("-"); f(-i))
+	      else if i>0 then f(i)
+	      else print("0")
+	  end
 	function f(b:int, c:int, d:int, e:int, f:int, g:int):int = 
 		let function fact(n:int):int = if n = 1 then 1 else n * fact(n-1)
 		in
 			fact(a) + fact(b) + fact(g)
 		end
 in 
-	f(1,2,3,4,5,6)
+	printint(f(1,2,3,4,5,6))
 end
 */
+
 
 /*
 let var a := 1
@@ -194,7 +217,17 @@ end
 */
 
 /*
-let function fib(a:int):int=
+let 
+
+	function printint(i: int) =
+	  let function f(i:int) = if i>0 
+		     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+	   in if i<0 then (print("-"); f(-i))
+	      else if i>0 then f(i)
+	      else print("0")
+	  end
+
+function fib(a:int):int=
 	if a = 1 | a = 2 then 1
 	else fib(a-1) + fib(a-2)
 
@@ -219,7 +252,8 @@ let function fib(a:int):int=
 
 in
 
-compare(20)
+printint(fib(17));
+if compare(20) then print("true\n") else print("false\n")
 
 end
 */
@@ -228,6 +262,14 @@ end
 let 
 	var zero := 0
 	function getZero():int = zero
+
+	function printint(i: int) =
+	  let function f(i:int) = if i>0 
+		     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+	   in if i<0 then (print("-"); f(-i))
+	      else if i>0 then f(i)
+	      else print("0")
+	  end
 
 	function h(a:int):int = 
 		let 
@@ -244,7 +286,8 @@ let
 		end
 in
 
-h(11)
+printint(h(12));
+print("\n")
 
 end
 */
@@ -442,10 +485,59 @@ end
 */
 
 
-
+/*
 let type ints = array of int
+	type recInt = {a:int}
 	var a := ints[10] of 5
+	var b := ints[10] of 5
+
+	var c:recInt := recInt{a=5}
+	var d:recInt := recInt{a=5}
+
 	var i := -65
 in
-a[(-i / 5) - 2]
+if d=c then print("true\n") else print  ("false\n");
+a[ (-i / 5) - 2 ]
 end
+*/
+
+/*
+let var i:=1
+
+	function printint(i: int) =
+	  let function f(i:int) = if i>0 
+		     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+	   in if i<0 then (print("-"); f(-i))
+	      else if i>0 then f(i)
+	      else print("0")
+	  end
+
+in
+while( (break; 1) ) do
+	(if i > 10 then break; printint(i); print("\n"); i := i+1)
+end
+*/
+
+/* for i := (break; 10) to 10 do print("b\n") */
+
+/* for i := 1 to 10 do (break; break; break) */
+
+/*
+let 
+	function printint(i: int) =
+	  let function f(i:int) = if i>0 
+		     then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+	   in if i<0 then (print("-"); f(-i))
+	      else if i>0 then f(i)
+	      else print("0")
+	  end
+in
+printint( (1=2)=2 );
+printint( 1=(2=2) )
+end
+*/
+
+for i := 1 to 5 do
+	(for j := 1 to 5 do
+		( print("a\n"); break; break);
+	break)

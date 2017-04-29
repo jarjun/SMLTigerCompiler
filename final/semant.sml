@@ -263,9 +263,10 @@ struct
 					end
 
 				|trexp (A.ForExp{var, escape, lo, hi, body, pos}) = 
-					let val newBreakLabel = (loopDepth := !loopDepth+1; Temp.newlabel())
+					let 
 						val {exp=expLo, ty=tyLo} = trexp lo
 						val {exp=expHi, ty=tyHi} = trexp hi
+						val newBreakLabel = (loopDepth := !loopDepth+1; Temp.newlabel())
 					in
 
 
@@ -282,9 +283,11 @@ struct
 					end
 
 				|trexp (A.WhileExp{test, body, pos}) =
-					let val newBreakLabel = (loopDepth := !loopDepth+1; Temp.newlabel())
-						val {exp=expBody, ty=tyBody} = transExp(venv, tenv, body, level, SOME(newBreakLabel)) (* CHANGE DONE LABEL *)
+					let 
 						val {exp=expTest, ty=tyTest} = transExp(venv, tenv, test, level, nearestDone)
+						val newBreakLabel = (loopDepth := !loopDepth+1; Temp.newlabel())
+
+						val {exp=expBody, ty=tyBody} = transExp(venv, tenv, body, level, SOME(newBreakLabel)) (* CHANGE DONE LABEL *)
 					in
 						(checkInt( {exp=expTest, ty=tyTest} , pos);
 						

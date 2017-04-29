@@ -1,4 +1,4 @@
-regalloc: 
+compile: 
 	echo 'Main.compile "$(file)";' | sml sources.cm
 
 loop:
